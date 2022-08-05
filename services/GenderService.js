@@ -24,7 +24,7 @@ exports.add = catchAsync(async (req, res, next) => {
 exports.update = catchAsync(async (req, res, next) => {
   const existing = await Genders.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Gender with this name not Found"));
+    return next(new Error("Error! Gender not Found"));
   }
 
   const gender = await Genders.findByIdAndUpdate(

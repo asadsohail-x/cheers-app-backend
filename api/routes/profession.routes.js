@@ -7,11 +7,11 @@ const {
   get,
   del,
 } = require("../../services/ProfessionService");
-const { authenticate } = require("../Middleware/auth");
+// const { authenticate } = require("../middleware/auth");
 
 /***************Routes************/
-route.post("/add", add);
-route.put("/update", update);
+route.put("/add", add);
+route.patch("/update", update);
 route.get("/getAll", getAll);
 route.get("/get/:id", get);
 route.delete("/delete", del);

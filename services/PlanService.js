@@ -20,34 +20,39 @@ exports.add = catchAsync(async (req, res, next) => {
   }
 });
 
-// //Update
-// exports.update = catchAsync(async (req, res, next) => {
-//   const existing = await Professions.findOne({ _id: req.body.id });
-//   if (!existing) {
-//     return next(new Error("Error! Profession with this name not Found"));
-//   }
+//Update
+exports.update = catchAsync(async (req, res, next) => {
+  const existing = await Plans.findOne({ _id: req.body.id });
+  if (!existing) {
+    return next(new Error("Error! Plan with this id not Found"));
+  }
 
-//   const profession = await Professions.findByIdAndUpdate(
-//     req.body.id,
-//     {
-//       name: req.body.name,
-//     },
-//     { new: true }
-//   );
+  const { id, name, price, discount, timespan } = req.body;
 
-//   if (profession) {
-//     return res.status(200).json({
-//       success: true,
-//       message: "Profession updated successfully",
-//       profession,
-//     });
-//   }
+  const plan = await Plans.findByIdAndUpdate(
+    id,
+    {
+      name: name ? name : existing.name,
+      price: price ? price : existing.price,
+      discount: discount ? discount : existing.discount,
+      timespan: timespan ? timespan : existing.timespan
+    },
+    { new: true }
+  );
 
-//   return res.status(500).json({
-//     success: false,
-//     message: "Error! Profession could not be updated",
-//   });
-// });
+  if (plan) {
+    return res.status(200).json({
+      success: true,
+      message: "Plan updated successfully",
+      plan,
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: "Error! Plan could not be updated",
+  });
+});
 
 //Get All
 exports.getAll = catchAsync(async (req, res, next) => {

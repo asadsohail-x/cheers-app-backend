@@ -29,11 +29,6 @@ const planSchema = new mongoose.Schema(
       type: Number,
       required: false,
     },
-    name: {
-      type: String,
-      required: [true, "Profession Name is required"],
-      unique: true,
-    },
     timespan: {
       type: timespanSchema,
       required: [true, "Plan Timespan is required"],

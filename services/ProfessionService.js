@@ -24,7 +24,7 @@ exports.add = catchAsync(async (req, res, next) => {
 exports.update = catchAsync(async (req, res, next) => {
   const existing = await Professions.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Profession with this name not Found"));
+    return next(new Error("Error! Profession not Found"));
   }
 
   const profession = await Professions.findByIdAndUpdate(

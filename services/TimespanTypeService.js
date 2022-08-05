@@ -24,7 +24,7 @@ exports.add = catchAsync(async (req, res, next) => {
 exports.update = catchAsync(async (req, res, next) => {
   const existing = await TimespanTypes.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Timespan Type with this name not Found"));
+    return next(new Error("Error! Timespan Type not Found"));
   }
 
   const timespanType = await TimespanTypes.findByIdAndUpdate(
