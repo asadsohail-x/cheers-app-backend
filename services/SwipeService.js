@@ -1,61 +1,7 @@
 const Swipes = require("../models/SwipeModel");
 const catchAsync = require("../utils/catchAsync");
 
-const userAggregate = [
-  // Join with Professions Collection
-  {
-    $lookup: {
-      from: "professions",
-      localField: "professionId",
-      foreignField: "_id",
-      pipeline: [
-        {
-          $project: {
-            _id: 1,
-            name: 1,
-          },
-        },
-      ],
-      as: "profession",
-    },
-  },
-  // Join with Genders Collection
-  {
-    $lookup: {
-      from: "genders",
-      localField: "genderId",
-      foreignField: "_id",
-      pipeline: [
-        {
-          $project: {
-            _id: 1,
-            name: 1,
-          },
-        },
-      ],
-      as: "gender",
-    },
-  },
-  // Determining which fields to respond with
-  {
-    $project: {
-      _id: 1,
-      firstName: 1,
-      lastName: 1,
-      location: 1,
-      profession: 1,
-      gender: 1,
-    },
-  },
-  {
-    $unwind: "$profession",
-  },
-  {
-    $unwind: "$gender",
-  },
-];
-
-const swipeAggregate = [
+const getSwipeAggregate = (userAggregate) => [
   {
     $lookup: {
       from: "users",
@@ -86,7 +32,7 @@ const swipeAggregate = [
 ];
 
 //Add
-exports.add = catchAsync(async (req, res, next) => {
+const add = catchAsync(async (req, res, next) => {
   const existing = await Swipes.findOne({
     swipedId: req.body.swipedId,
     swiperId: req.body.swiperId,
@@ -109,8 +55,9 @@ exports.add = catchAsync(async (req, res, next) => {
 });
 
 //Get All
-exports.getAll = catchAsync(async (req, res, next) => {
-  const swipes = await Swipes.aggregate(swipeAggregate);
+const getAll = catchAsync(async (req, res, next) => {
+  const { userAggregate } = require("./UserService");
+  const swipes = await Swipes.aggregate(getSwipeAggregate(userAggregate));
   if (swipes.length > 0) {
     return res.status(201).json({
       success: true,
@@ -136,8 +83,17 @@ exports.getAll = catchAsync(async (req, res, next) => {
 //   });
 // });
 
+// Delete Swipe Utility Function
+const deleteSwipes = async (userId) => {
+  const result = await Swipes.find({
+    $or: [{ swiperId: userId }, { swipedId: userId }],
+  });
+
+  return result;
+};
+
 //Delete
-exports.del = catchAsync(async (req, res, next) => {
+const del = catchAsync(async (req, res, next) => {
   const existing = await Swipes.findOne({ _id: req.body.id });
   if (!existing) {
     return next(new Error("Error! Swipe not Found"));
@@ -157,7 +113,7 @@ exports.del = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.delByUser = catchAsync(async (req, res, next) => {
+const delByUser = catchAsync(async (req, res, next) => {
   //Delete all the swipe data
   const deleteResult = await deleteSwipes(req.params.id);
   console.log(deleteResult);
@@ -169,12 +125,10 @@ exports.delByUser = catchAsync(async (req, res, next) => {
   });
 });
 
-async function deleteSwipes(userId) {
-  const result = await Swipes.find({
-    $or: [{ swiperId: userId }, { swipedId: userId }],
-  });
-
-  return result;
-}
-
-exports.deleteSwipes = deleteSwipes;
+module.exports = {
+  add,
+  getAll,
+  del,
+  delByUser,
+  deleteSwipes,
+};

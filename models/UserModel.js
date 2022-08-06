@@ -71,6 +71,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "City is required"],
     },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -78,5 +82,6 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.plugin(paginate);
+userSchema.index({ location: "2dsphere" });
 
 module.exports = Users = mongoose.model("Users", userSchema);

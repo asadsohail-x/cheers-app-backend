@@ -8,6 +8,8 @@ const {
   getPaginated,
   uploadPfp,
   updateLoc,
+  block,
+  unblock,
 } = require("../../services/UserService");
 
 const imageUploader = require("../../utils/userPfpUploader");
@@ -20,6 +22,8 @@ route.get("/getAll", getPaginated);
 route.get("/get/:id", get);
 route.delete("/delete", del);
 route.patch("/updateLoc", updateLoc);
+route.patch("/block", block);
+route.patch("/unblock", unblock);
 route.put(
   "/upload-pfp",
   (...rest) => imageUploader("profile-photo", ...rest),

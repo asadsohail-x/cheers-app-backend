@@ -1,9 +1,12 @@
 const Users = require("../models/UserModel");
+const { getFilterPrefs } = require("../services/FilterPrefService");
+
 const { Types } = require("mongoose");
 const catchAsync = require("../utils/catchAsync");
 const { deleteSwipes } = require("./SwipeService");
 
 const userAggregate = [
+  // Join with Genders Collection
   {
     $lookup: {
       from: "genders",
@@ -20,6 +23,7 @@ const userAggregate = [
       as: "gender",
     },
   },
+  // Join with Professions Collection
   {
     $lookup: {
       from: "professions",
@@ -36,19 +40,22 @@ const userAggregate = [
       as: "profession",
     },
   },
+  // Removing fields
   {
-    $unset: ["genderId", "professionId"],
+    $unset: ["genderId", "professionId", "password"],
   },
+  // Destructure gender array
   {
     $unwind: "$gender",
   },
+  // Destructure profession array
   {
     $unwind: "$profession",
   },
 ];
 
 //Add
-exports.add = catchAsync(async (req, res, next) => {
+const add = catchAsync(async (req, res, next) => {
   const isEmailUnique = await checkEmail(req.body.email);
   if (!isEmailUnique) return next(new Error("Error! Email already taken"));
 
@@ -68,8 +75,15 @@ exports.add = catchAsync(async (req, res, next) => {
   }
 });
 
+const updateUser = async (id, user) => {
+  let updatedUser = null;
+  const result = await Users.findByIdAndUpdate(id, user, { new: true });
+  if (result) updatedUser = await getUser({ _id: result._id });
+  return updatedUser;
+};
+
 //Update
-exports.update = catchAsync(async (req, res, next) => {
+const update = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
   if (!existing) return next(new Error("Error! User not Found"));
 
@@ -89,14 +103,9 @@ exports.update = catchAsync(async (req, res, next) => {
     }
   }
 
-  const updatedUser = await Users.findByIdAndUpdate(
-    id,
-    { ...req.body },
-    { new: true }
-  );
+  const updatedUser = await updateUser(id, req.body);
 
   if (updatedUser) {
-    const user = await getUser({ _id: updatedUser._id });
     return res.status(200).json({
       success: true,
       message: "User updated successfully",
@@ -111,7 +120,7 @@ exports.update = catchAsync(async (req, res, next) => {
 });
 
 //Get All
-exports.getAll = catchAsync(async (req, res, next) => {
+const getAll = catchAsync(async (req, res, next) => {
   const users = await getUsers();
   if (users.length > 0) {
     return res.status(201).json({
@@ -124,7 +133,7 @@ exports.getAll = catchAsync(async (req, res, next) => {
 });
 
 //Get One
-exports.get = catchAsync(async (req, res, next) => {
+const get = catchAsync(async (req, res, next) => {
   const user = await getUser({ _id: Types.ObjectId(req.params.id) });
   if (!user) return next(new Error("Error! User not found!"));
 
@@ -136,7 +145,7 @@ exports.get = catchAsync(async (req, res, next) => {
 });
 
 //Delete
-exports.del = catchAsync(async (req, res, next) => {
+const del = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
   if (!existing) {
     return next(new Error("Error! User not Found"));
@@ -156,19 +165,62 @@ exports.del = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getPaginated = catchAsync(async (req, res, next) => {
-  const { page, limit } = req.query;
+const getPaginated = catchAsync(async (req, res, next) => {
+  const {
+    page,
+    limit,
+    lat,
+    long,
+    radius,
+    gender: genderId,
+    min_age: minAge,
+    max_age: maxAge,
+  } = req.query;
 
-  let users = [];
-  var userAggregatePromise = Users.aggregate(userAggregate);
+  const filterPrefs = await getFilterPrefs();
+  const aggregate = [];
 
-  if (page && limit) {
-    const result = await Users.aggregatePaginate(userAggregatePromise, {
-      page,
-      limit,
+  const query = {};
+  if (genderId) query.genderId = genderId;
+  else if (minAge)
+    query.age = maxAge ? { $gte: minAge, $lte: maxAge } : { $gte: minAge };
+  else if (maxAge) query.age = { $lte: maxAge };
+
+  if (lat && long) {
+    aggregate.push(
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [parseFloat(long), parseFloat(lat)],
+          },
+          maxDistance: (radius || filterPrefs.radius) * 1000,
+          distanceMultiplier: 0.000621371 * 1.61,
+          distanceField: "distance",
+          spherical: true,
+
+          query,
+        },
+      },
+      {
+        $limit: (page || 1) * (limit || filterPrefs.filterLimit),
+      }
+    );
+  } else {
+    aggregate.push({
+      $match: query,
     });
-    users = [...result.docs];
-  } else users = await userAggregatePromise;
+  }
+
+  aggregate.push(...userAggregate);
+
+  var userAggregatePromise = Users.aggregate(aggregate);
+  const result = await Users.aggregatePaginate(userAggregatePromise, {
+    page: page || 1,
+    limit: limit || filterPrefs.filterLimit,
+  });
+
+  let users = [...result.docs];
 
   if (users.length <= 0) return next(new Error("Error! Users not found"));
 
@@ -179,13 +231,13 @@ exports.getPaginated = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.uploadPfp = catchAsync(async (req, res, next) => {
+const uploadPfp = catchAsync(async (req, res, next) => {
   if (!req.file) return next(new Error("Error! Image upload failed"));
   const imagePath = req.file.path;
   res.json({ success: true, imagePath });
 });
 
-exports.updateLoc = catchAsync(async (req, res, next) => {
+const updateLoc = catchAsync(async (req, res, next) => {
   const { id: _id, lat, long } = req.body;
 
   const existing = await Users.findOne({ _id });
@@ -205,6 +257,37 @@ exports.updateLoc = catchAsync(async (req, res, next) => {
     success: true,
     message: "User location updated successfully",
     user: { _id: updatedUser._id, location: updatedUser.location.coordinates },
+  });
+});
+
+const block = catchAsync(async (req, res, next) => {
+  const existing = await Users.findOne({ _id: req.body.id });
+  if (!existing) return next(new Error("Error! User not Found"));
+  if (existing.isBlocked) return next(new Error("Error! User already blocked"));
+
+  const blockedUser = await updateUser(req.body.id, { isBlocked: true });
+  if (!blockedUser) return next(new Error("Error! User could not be blocked"));
+
+  res.status(200).json({
+    success: true,
+    message: "User blocked successfully",
+    user: blockedUser,
+  });
+});
+
+const unblock = catchAsync(async (req, res, next) => {
+  const existing = await Users.findOne({ _id: req.body.id });
+  if (!existing) return next(new Error("Error! User not Found"));
+  if (!existing.isBlocked)
+    return next(new Error("Error! User already unblocked"));
+
+  const user = await updateUser(req.body.id, { isBlocked: false });
+  if (!user) return next(new Error("Error! User could not be blocked"));
+
+  res.status(200).json({
+    success: true,
+    message: "User unblocked successfully",
+    user,
   });
 });
 
@@ -237,3 +320,16 @@ async function getUser(query) {
   const users = await getUsers(query);
   return users[0];
 }
+
+module.exports = {
+  add,
+  update,
+  get,
+  del,
+  getPaginated,
+  uploadPfp,
+  updateLoc,
+  userAggregate,
+  block,
+  unblock,
+};
