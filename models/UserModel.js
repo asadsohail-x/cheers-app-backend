@@ -38,15 +38,13 @@ const userSchema = new mongoose.Schema(
       required: [true, "Date of birth is required"],
     },
     location: {
-      location: {
-        type: {
-          type: String,
-          default: "Point",
-        },
-        coordinates: {
-          type: [Number],
-          required: true,
-        },
+      type: {
+        type: String,
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+        required: true,
       },
     },
     bio: {

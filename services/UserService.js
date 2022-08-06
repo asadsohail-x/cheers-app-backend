@@ -58,7 +58,7 @@ exports.add = catchAsync(async (req, res, next) => {
 
   const user = await Users.create({ ...req.body });
   if (!user) {
-    throw new Error("Error! User cannot be added");
+    return next(new Error("Error! User cannot be added"));
   } else {
     return res.status(201).json({
       success: true,
@@ -77,14 +77,15 @@ exports.update = catchAsync(async (req, res, next) => {
   if (email) {
     if (email !== existing.email) {
       const isEmailUnique = await checkEmail(email);
-      if (!isEmailUnique) throw new Error("Error! Email already taken");
+      if (!isEmailUnique) return next(new Error("Error! Email already taken"));
     }
   }
 
   if (username) {
     if (username !== existing.username) {
       const isUsernameUnique = await checkUsername(username);
-      if (!isUsernameUnique) throw new Error("Error! Username already taken");
+      if (!isUsernameUnique)
+        return next(new Error("Error! Username already taken"));
     }
   }
 
@@ -119,13 +120,13 @@ exports.getAll = catchAsync(async (req, res, next) => {
       users,
     });
   }
-  throw new Error("Error! Users not found");
+  return next(new Error(" Error! Users not found!"));
 });
 
 //Get One
 exports.get = catchAsync(async (req, res, next) => {
   const user = await getUser({ _id: Types.ObjectId(req.params.id) });
-  if (!user) throw new Error("Error! User Not Found");
+  if (!user) return next(new Error("Error! User not found!"));
 
   return res.status(201).json({
     success: true,
@@ -155,7 +156,7 @@ exports.del = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getPaginated = catchAsync(async (req, res) => {
+exports.getPaginated = catchAsync(async (req, res, next) => {
   const { page, limit } = req.query;
 
   let users = [];
@@ -169,13 +170,42 @@ exports.getPaginated = catchAsync(async (req, res) => {
     users = [...result.docs];
   } else users = await userAggregatePromise;
 
+  if (users.length <= 0) return next(new Error("Error! Users not found"));
+
   res.status(201).json({
     success: true,
     message: "Users found",
     users,
   });
+});
 
-  return new Error("Error! Users Not found");
+exports.uploadPfp = catchAsync(async (req, res, next) => {
+  if (!req.file) return next(new Error("Error! Image upload failed"));
+  const imagePath = req.file.path;
+  res.json({ success: true, imagePath });
+});
+
+exports.updateLoc = catchAsync(async (req, res, next) => {
+  const { id: _id, lat, long } = req.body;
+
+  const existing = await Users.findOne({ _id });
+
+  if (!existing) return next(new Error("Error! User not found"));
+
+  const updatedUser = await Users.findByIdAndUpdate(
+    _id,
+    { $set: { "location.coordinates": [long, lat] } },
+    { new: true }
+  );
+
+  if (!updatedUser)
+    return next(new Error("Error! User Location could not be updated"));
+
+  return res.status(201).json({
+    success: true,
+    message: "User location updated successfully",
+    user: { _id: updatedUser._id, location: updatedUser.location.coordinates },
+  });
 });
 
 async function checkEmail(email) {
