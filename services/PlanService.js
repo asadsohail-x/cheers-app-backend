@@ -35,7 +35,7 @@ exports.update = catchAsync(async (req, res, next) => {
       name: name ? name : existing.name,
       price: price ? price : existing.price,
       discount: discount ? discount : existing.discount,
-      timespan: timespan ? timespan : existing.timespan
+      timespan: timespan ? timespan : existing.timespan,
     },
     { new: true }
   );

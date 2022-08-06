@@ -155,6 +155,29 @@ exports.del = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getPaginated = catchAsync(async (req, res) => {
+  const { page, limit } = req.query;
+
+  let users = [];
+  var userAggregatePromise = Users.aggregate(userAggregate);
+
+  if (page && limit) {
+    const result = await Users.aggregatePaginate(userAggregatePromise, {
+      page,
+      limit,
+    });
+    users = [...result.docs];
+  } else users = await userAggregatePromise;
+
+  res.status(201).json({
+    success: true,
+    message: "Users found",
+    users,
+  });
+
+  return new Error("Error! Users Not found");
+});
+
 async function checkEmail(email) {
   let result = await Users.find({ email });
   return !result.length;

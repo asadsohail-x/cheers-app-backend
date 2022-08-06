@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const paginate = require("mongoose-aggregate-paginate-v2");
 
 const userSchema = new mongoose.Schema(
   {
@@ -37,9 +38,16 @@ const userSchema = new mongoose.Schema(
       required: [true, "Date of birth is required"],
     },
     location: {
-      type: { type: String, default: "Point" },
-      coordinates: [],
-      required: false,
+      location: {
+        type: {
+          type: String,
+          default: "Point",
+        },
+        coordinates: {
+          type: [Number],
+          required: true,
+        },
+      },
     },
     bio: {
       type: String,
@@ -70,5 +78,7 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.plugin(paginate);
 
 module.exports = Users = mongoose.model("Users", userSchema);
