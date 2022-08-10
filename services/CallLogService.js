@@ -100,7 +100,7 @@ export const getAll = catchAsync(async (req, res, next) => {
   const _aggregate = [];
 
   const query = {};
-  if (user) query.callerId = user;
+  if (user) query.callerId = mongoose.Types.ObjectId(user);
 
   if (query) {
     _aggregate.push({

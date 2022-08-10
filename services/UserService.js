@@ -74,7 +74,7 @@ export const update = catchAsync(async (req, res, next) => {
 
 //Get All
 export const getAll = catchAsync(async (req, res, next) => {
-  const users = await getUsers();
+  const users = await getUsers({ isBlocked: false });
   if (users.length > 0) {
     return res.status(201).json({
       success: true,
@@ -87,7 +87,10 @@ export const getAll = catchAsync(async (req, res, next) => {
 
 //Get One
 export const get = catchAsync(async (req, res, next) => {
-  const user = await getUser({ _id: mongoose.Types.ObjectId(req.params.id) });
+  const user = await getUser({
+    _id: mongoose.Types.ObjectId(req.params.id),
+    isBlocked: false,
+  });
   if (!user) return next(new Error("Error! User not found!"));
 
   return res.status(201).json({
@@ -164,6 +167,10 @@ export const getPaginated = catchAsync(async (req, res, next) => {
       $match: query,
     });
   }
+
+  _aggregate.push({
+    $match: { isBlocked: false },
+  });
 
   _aggregate.push(...userAggregate);
 

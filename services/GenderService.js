@@ -56,7 +56,7 @@ export const getAll = catchAsync(async (req, res, next) => {
       genders,
     });
   } else {
-    throw new Error("Error! Genders not found");
+    return next(new Error("Error! Genders not found"));
   }
 });
 

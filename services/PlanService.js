@@ -1,44 +1,46 @@
-const Plans = require("../models/PlanModel");
-const catchAsync = require("../utils/catchAsync");
+import Plans from "../models/PlanModel";
+import catchAsync from "../utils/catchAsync";
 
-//Add
-exports.add = catchAsync(async (req, res, next) => {
-  const existing = await Plans.findOne({ name: req.body.name });
+import mongoose from "mongoose";
+import { planAggregate } from "../utils/aggregates";
+
+export const add = catchAsync(async (req, res, next) => {
+  const planData = {
+    timespanId: req.body.timespanId,
+    cost: req.body.cost,
+    discount: req.body.discount,
+  };
+
+  const existing = await Plans.findOne(planData);
   if (existing) {
-    return next(new Error("Error! Plan with this name already exist"));
+    return next(new Error("Error! Plan already exist"));
   }
 
-  const plan = await Plans.create({ ...req.body });
+  const plan = await Plans.create(planData);
   if (!plan) {
-    throw new Error("Error! Plan cannot be added");
-  } else {
-    return res.status(201).json({
-      success: true,
-      message: "Plan added successfully",
-      plan,
-    });
+    return next(new Error("Error! Plan cannot be added"));
   }
+  return res.status(201).json({
+    success: true,
+    message: "Plan added successfully",
+    plan,
+  });
 });
 
-//Update
-exports.update = catchAsync(async (req, res, next) => {
+const updatePlan = async (id, plan) => {
+  let updatedPlan = null;
+  const result = await Plans.findByIdAndUpdate(id, plan, { new: true });
+  if (result) updatedPlan = await getPlan({ _id: result._id });
+  return updatedPlan;
+};
+
+export const update = catchAsync(async (req, res, next) => {
   const existing = await Plans.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Plan with this id not Found"));
+    return next(new Error("Error! Plan not Found"));
   }
 
-  const { id, name, price, discount, timespan } = req.body;
-
-  const plan = await Plans.findByIdAndUpdate(
-    id,
-    {
-      name: name ? name : existing.name,
-      price: price ? price : existing.price,
-      discount: discount ? discount : existing.discount,
-      timespan: timespan ? timespan : existing.timespan,
-    },
-    { new: true }
-  );
+  const plan = await updatePlan(existing._id, req.body);
 
   if (plan) {
     return res.status(200).json({
@@ -54,87 +56,45 @@ exports.update = catchAsync(async (req, res, next) => {
   });
 });
 
-//Get All
-exports.getAll = catchAsync(async (req, res, next) => {
+export const getAll = catchAsync(async (req, res, next) => {
   const plans = await Plans.aggregate([
     {
-      $lookup: {
-        from: "timespantypes",
-        localField: "timespan.id",
-        foreignField: "_id",
-        pipeline: [
-          {
-            $project: {
-              _id: 1,
-              name: 1,
-            },
-          },
-        ],
-        as: "timespan.type",
-      },
+      $match: { isDisabled: false },
     },
-    {
-      $unset: "timespan.id",
-    },
-    {
-      $unwind: "$timespan.type",
-    },
+    ...planAggregate,
   ]);
+  
   if (plans.length > 0) {
     return res.status(201).json({
       success: true,
       message: "Plans found",
       plans,
     });
-  } else {
-    throw new Error("Error! Plans not found");
   }
+  return next(new Error("Error! Plans not found"));
 });
 
-//Get One
-exports.get = catchAsync(async (req, res, next) => {
-  const plan = await Plans.aggregate([
+export const get = catchAsync(async (req, res, next) => {
+  const plans = await Plans.aggregate([
     {
       $match: {
-        _id: req.params.id,
+        _id: mongoose.Types.ObjectId(req.params.id),
       },
     },
-    {
-      $lookup: {
-        from: "timespantypes",
-        localField: "timespan.id",
-        foreignField: "_id",
-        pipeline: [
-          {
-            $project: {
-              _id: 1,
-              name: 1,
-            },
-          },
-        ],
-        as: "timespan.type",
-      },
-    },
-    {
-      $unset: "timespan.id",
-    },
-    {
-      $unwind: "$timespan.type",
-    },
+    ...planAggregate,
   ]);
-  if (!plan) {
-    throw new Error("Error! Plan Not Found");
+  if (plans.length > 0) {
+    return res.status(201).json({
+      success: true,
+      message: "Plan found",
+      plan: plans[0],
+    });
   }
 
-  return res.status(201).json({
-    success: true,
-    message: "Plan found",
-    plan,
-  });
+  return next(new Error("Error! Plan not found"));
 });
 
-//Delete
-exports.del = catchAsync(async (req, res, next) => {
+export const del = catchAsync(async (req, res, next) => {
   const existing = await Plans.findOne({ _id: req.body.id });
   if (!existing) {
     return next(new Error("Error! Plan not Found"));
@@ -153,3 +113,56 @@ exports.del = catchAsync(async (req, res, next) => {
     plan: deletedPlan,
   });
 });
+
+export const disable = catchAsync(async (req, res, next) => {
+  const existing = await Plans.findOne({ _id: req.body.id });
+  if (!existing) return next(new Error("Error! Plan not Found"));
+  if (existing.isDisabled)
+    return next(new Error("Error! Plan already disabled"));
+
+  const disabledPlan = await updatePlan(req.body.id, { isDisabled: true });
+  if (!disabledPlan)
+    return next(new Error("Error! Plan could not be disabled"));
+
+  res.status(200).json({
+    success: true,
+    message: "Plan disabled successfully",
+    plan: disabledPlan,
+  });
+});
+
+export const enable = catchAsync(async (req, res, next) => {
+  const existing = await Plans.findOne({ _id: req.body.id });
+  if (!existing) return next(new Error("Error! Plan not Found"));
+  if (!existing.isDisabled)
+    return next(new Error("Error! Plan already enabled"));
+
+  const enabledPlan = await updatePlan(req.body.id, { isDisabled: false });
+  if (!enabledPlan) return next(new Error("Error! Plan could not be enabled"));
+
+  res.status(200).json({
+    success: true,
+    message: "Plan enabled successfully",
+    plan: enabledPlan,
+  });
+});
+
+async function getPlans(query = null) {
+  let _aggregate = query
+    ? [
+        {
+          $match: { ...query },
+        },
+        ...planAggregate,
+      ]
+    : planAggregate;
+
+  const result = await Plans.aggregate(_aggregate);
+
+  return result;
+}
+
+async function getPlan(query) {
+  const result = await getPlans(query);
+  return result[0];
+}

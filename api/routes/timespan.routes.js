@@ -1,6 +1,7 @@
 import { Router } from "express";
 const route = Router();
-import { add, update, getAll, get, del } from "../../services/PlanService";
+import { add, update, getAll, get, del } from "../../services/TimespanService";
+// const { authenticate } = require("../middleware/auth");
 
 /***************Routes************/
 route.put("/add", add);

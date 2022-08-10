@@ -1,42 +1,27 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+const { Schema, Types, model } = mongoose;
 
-const timespanSchema = new mongoose.Schema(
-  {
-    id: {
-      type: mongoose.Types.ObjectId,
-      required: [true, "Plan Timespan Id is required"],
+export default model(
+  "Plans",
+  new Schema(
+    {
+      timespanId: {
+        type: Types.ObjectId,
+        required: [true, "Timespan is required"],
+      },
+      cost: {
+        type: Number,
+        required: [true, "Cost is required"],
+      },
+      discount: {
+        type: Number,
+        required: false,
+      },
+      isDisabled: {
+        type: Boolean,
+        default: false,
+      },
     },
-    value: {
-      type: Number,
-      required: [true, "Plan Timespan Value is required"],
-    },
-  },
-  { _id: false }
+    { timestamps: true }
+  )
 );
-
-const planSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, "Plan Name is required"],
-      unique: true,
-    },
-    price: {
-      type: Number,
-      required: [true, "Plan Price is required"],
-    },
-    discount: {
-      type: Number,
-      required: false,
-    },
-    timespan: {
-      type: timespanSchema,
-      required: [true, "Plan Timespan is required"],
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-module.exports = Plans = mongoose.model("Plans", planSchema);

@@ -46,6 +46,7 @@ export const userAggregate = [
     $unwind: "$profession",
   },
 ];
+
 export const swipeAggregate = [
   {
     $lookup: {
@@ -75,6 +76,7 @@ export const swipeAggregate = [
     $unwind: "$swiped",
   },
 ];
+
 export const callLogAggregate = [
   {
     $lookup: {
@@ -102,5 +104,61 @@ export const callLogAggregate = [
   },
   {
     $unwind: "$receiver",
+  },
+];
+
+export const planAggregate = [
+  {
+    $lookup: {
+      from: "timespans",
+      localField: "timespanId",
+      foreignField: "_id",
+      pipeline: [
+        {
+          $project: {
+            _id: 1,
+            unit: 1,
+            duration: 1,
+          },
+        },
+      ],
+      as: "timespan",
+    },
+  },
+  {
+    $unset: "timespanId",
+  },
+  {
+    $unwind: "$timespan",
+  },
+];
+
+export const subscriptionAggregate = [
+  {
+    $lookup: {
+      from: "users",
+      localField: "userId",
+      foreignField: "_id",
+      pipeline: userAggregate,
+      as: "user",
+    },
+  },
+  {
+    $lookup: {
+      from: "plans",
+      localField: "planId",
+      foreignField: "_id",
+      pipeline: planAggregate,
+      as: "plan",
+    },
+  },
+  {
+    $unset: ["planId", "userId"],
+  },
+  {
+    $unwind: "$plan",
+  },
+  {
+    $unwind: "$user",
   },
 ];
