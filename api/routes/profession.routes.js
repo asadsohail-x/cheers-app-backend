@@ -1,12 +1,6 @@
-const express = require("express");
-const route = express.Router();
-const {
-  add,
-  update,
-  getAll,
-  get,
-  del,
-} = require("../../services/ProfessionService");
+import { Router } from "express";
+const route = Router();
+import { add, update, getAll, get, del } from "../../services/ProfessionService";
 // const { authenticate } = require("../middleware/auth");
 
 /***************Routes************/
@@ -16,4 +10,4 @@ route.get("/getAll", getAll);
 route.get("/get/:id", get);
 route.delete("/delete", del);
 
-module.exports = route;
+export default route;

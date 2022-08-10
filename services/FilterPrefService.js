@@ -1,9 +1,9 @@
-const FilterPrefs = require("../models/FilterPrefModel");
-const catchAsync = require("../utils/catchAsync");
+import FilterPrefs from "../models/FilterPrefModel";
+import catchAsync from "../utils/catchAsync";
 
-const get = catchAsync(async (req, res, next) => {
+export const get = catchAsync(async (req, res, next) => {
   const filterPrefs = await getFilterPrefs();
-  
+
   if (!filterPrefs) return next(new Error("Error! FilterPrefs not found!"));
 
   return res.status(201).json({
@@ -13,21 +13,21 @@ const get = catchAsync(async (req, res, next) => {
   });
 });
 
-const getFilterPrefs = async () => {
+export const getFilterPrefs = async () => {
   const existing = await FilterPrefs.findOne();
 
   let createdFilterPrefs = null;
-  if (!existing) createdFilterPrefs = await new FilterPrefs().save();
+  if (!existing) createdFilterPrefs = await FilterPrefs.create();
 
   return existing ? existing : createdFilterPrefs;
 };
 
-const save = catchAsync(async (req, res) => {
+export const save = catchAsync(async (req, res) => {
   const existing = await FilterPrefs.findOne();
 
   let filterPrefs = null;
 
-  if (!existing) filterPrefs = await new FilterPrefs({ ...req.body }).save();
+  if (!existing) filterPrefs = await FilterPrefs.create({ ...req.body });
   else
     filterPrefs = await FilterPrefs.findByIdAndUpdate(
       existing._id,
@@ -44,9 +44,3 @@ const save = catchAsync(async (req, res) => {
 
   return new Error("Error! Filter Preferences could not be saved");
 });
-
-module.exports = {
-  get,
-  getFilterPrefs,
-  save,
-};

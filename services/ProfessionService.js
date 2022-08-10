@@ -1,8 +1,7 @@
-const Professions = require("../models/ProfessionModel");
-const catchAsync = require("../utils/catchAsync");
+import Professions from "../models/ProfessionModel";
+import catchAsync from "../utils/catchAsync";
 
-//Add
-exports.add = catchAsync(async (req, res, next) => {
+export const add = catchAsync(async (req, res, next) => {
   const existing = await Professions.findOne({ name: req.body.name });
   if (existing) {
     return next(new Error("Error! Profession with this name already exist"));
@@ -20,8 +19,7 @@ exports.add = catchAsync(async (req, res, next) => {
   }
 });
 
-//Update
-exports.update = catchAsync(async (req, res, next) => {
+export const update = catchAsync(async (req, res, next) => {
   const existing = await Professions.findOne({ _id: req.body.id });
   if (!existing) {
     return next(new Error("Error! Profession not Found"));
@@ -49,8 +47,7 @@ exports.update = catchAsync(async (req, res, next) => {
   });
 });
 
-//Get All
-exports.getAll = catchAsync(async (req, res, next) => {
+export const getAll = catchAsync(async (req, res, next) => {
   const professions = await Professions.find();
   if (professions.length > 0) {
     return res.status(201).json({
@@ -63,8 +60,7 @@ exports.getAll = catchAsync(async (req, res, next) => {
   }
 });
 
-//Get One
-exports.get = catchAsync(async (req, res, next) => {
+export const get = catchAsync(async (req, res, next) => {
   const profession = await Professions.findOne({ _id: req.params.id });
   if (!profession) {
     throw new Error("Error! Profession Not Found");
@@ -77,8 +73,7 @@ exports.get = catchAsync(async (req, res, next) => {
   });
 });
 
-//Delete
-exports.del = catchAsync(async (req, res, next) => {
+export const del = catchAsync(async (req, res, next) => {
   const existing = await Professions.findOne({ _id: req.body.id });
   if (!existing) {
     return next(new Error("Error! Profession not Found"));

@@ -1,6 +1,8 @@
-const { Schema, Types, model } = require("mongoose");
+import mongoose from "mongoose";
 
-module.exports = model(
+const { Schema, Types, model } = mongoose;
+
+export default model(
   "CallLogs",
   new Schema(
     {
@@ -10,7 +12,7 @@ module.exports = model(
       },
       receiverId: {
         type: Types.ObjectId,
-        required: [true, "Receiver `Id is required"],
+        required: [true, "Receiver Id is required"],
       },
       startTime: {
         type: Date,

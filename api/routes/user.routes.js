@@ -1,6 +1,6 @@
-const express = require("express");
-const route = express.Router();
-const {
+import { Router } from "express";
+const route = Router();
+import {
   add,
   update,
   get,
@@ -10,9 +10,9 @@ const {
   updateLoc,
   block,
   unblock,
-} = require("../../services/UserService");
+} from "../../services/UserService";
 
-const imageUploader = require("../../utils/userPfpUploader");
+import imageUploader from "../../utils/userPfpUploader";
 // const { authenticate } = require("../Middleware/auth");
 
 /***************Routes************/
@@ -30,4 +30,4 @@ route.put(
   uploadPfp
 );
 
-module.exports = route;
+export default route;

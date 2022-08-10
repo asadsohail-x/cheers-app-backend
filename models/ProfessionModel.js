@@ -1,6 +1,7 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+const { Schema, model } = mongoose;
 
-const professionSchema = new mongoose.Schema(
+const professionSchema = new Schema(
   {
     name: {
       type: String,
@@ -13,4 +14,4 @@ const professionSchema = new mongoose.Schema(
   }
 );
 
-module.exports = Professions = mongoose.model("Professions", professionSchema);
+export default model("Professions", professionSchema);

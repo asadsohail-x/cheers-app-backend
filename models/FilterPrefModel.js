@@ -1,6 +1,7 @@
-const { Schema, model } = require("mongoose");
+import mongoose from "mongoose";
+const { Schema, model } = mongoose;
 
-module.exports = model(
+export default model(
   "FilterPreferences",
   new Schema(
     {

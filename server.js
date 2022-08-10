@@ -1,18 +1,17 @@
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-dotenv.config({
+import mongoose from "mongoose";
+import { config } from "dotenv";
+config({
   path: "./config.env",
 });
 
-// process.on("uncaughtException", (err) => {
-//   console.log("UNCAUGHT EXCEPTION!!! shutting down...");
-//   console.log(err.name, err.message);
-//   process.exit(1);
-// });
+// // process.on("uncaughtException", (err) => {
+// //   console.log("UNCAUGHT EXCEPTION!!! shutting down...");
+// //   console.log(err.name, err.message);
+// //   process.exit(1);
+// // });
 
-const app = require("./app");
+import app from "./app.js";
 
-// const database = process.env.DATABASE.replace('<PASSWORD>', process.env.DATABASE_PASSWORD);
 const database = process.env.DATABASE;
 
 // Connect the database
@@ -22,17 +21,10 @@ mongoose
     useUnifiedTopology: true,
   })
   .then((con) => {
-    console.log("=====>>DB connection Successfully!");
-    // Start the server
-    const port = process.env.PORT || 5000;
-    app.listen(port, () => {
-      console.log(`
-      ################################################
-    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-             Server listening on port: ${port}
-    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-      ################################################
-    `);
+    const PORT = process.env.PORT || 5000;
+    console.log("\n> DB connection successful!");
+    app.listen(PORT, () => {
+      console.log(`> Server listening on port: ${PORT}`);
     });
 
     process.on("unhandledRejection", (err) => {

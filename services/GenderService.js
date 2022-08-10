@@ -1,8 +1,7 @@
-const Genders = require("../models/GenderModel");
-const catchAsync = require("../utils/catchAsync");
+import Genders from "../models/GenderModel";
+import catchAsync from "../utils/catchAsync";
 
-//Add
-exports.add = catchAsync(async (req, res, next) => {
+export const add = catchAsync(async (req, res, next) => {
   const existing = await Genders.findOne({ name: req.body.name });
   if (existing) {
     return next(new Error("Error! Gender with this name already exist"));
@@ -20,8 +19,7 @@ exports.add = catchAsync(async (req, res, next) => {
   }
 });
 
-//Update
-exports.update = catchAsync(async (req, res, next) => {
+export const update = catchAsync(async (req, res, next) => {
   const existing = await Genders.findOne({ _id: req.body.id });
   if (!existing) {
     return next(new Error("Error! Gender not Found"));
@@ -49,8 +47,7 @@ exports.update = catchAsync(async (req, res, next) => {
   });
 });
 
-//Get All
-exports.getAll = catchAsync(async (req, res, next) => {
+export const getAll = catchAsync(async (req, res, next) => {
   const genders = await Genders.find();
   if (genders.length > 0) {
     return res.status(201).json({
@@ -63,8 +60,7 @@ exports.getAll = catchAsync(async (req, res, next) => {
   }
 });
 
-//Get One
-exports.get = catchAsync(async (req, res, next) => {
+export const get = catchAsync(async (req, res, next) => {
   const gender = await Genders.findOne({ _id: req.params.id });
   if (!gender) {
     throw new Error("Error! Gender Not Found");
@@ -77,11 +73,10 @@ exports.get = catchAsync(async (req, res, next) => {
   });
 });
 
-//Delete
-exports.del = catchAsync(async (req, res, next) => {
+export const del = catchAsync(async (req, res, next) => {
   const existing = await Genders.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Gender with this Name not Found"));
+    return next(new Error("Error! Gender not Found"));
   }
 
   const deletedGender = await Genders.findOneAndDelete({ _id: req.body.id });

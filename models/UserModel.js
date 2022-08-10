@@ -1,7 +1,9 @@
-const mongoose = require("mongoose");
-const paginate = require("mongoose-aggregate-paginate-v2");
+import mongoose from "mongoose";
+import paginate from "mongoose-aggregate-paginate-v2";
 
-const userSchema = new mongoose.Schema(
+const { Schema, Types, model } = mongoose;
+
+const userSchema = new Schema(
   {
     firstName: {
       type: String,
@@ -20,7 +22,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Profile Picture is required"],
     },
     genderId: {
-      type: mongoose.Types.ObjectId,
+      type: Types.ObjectId,
       required: [true, "Gender is required"],
     },
     email: {
@@ -56,7 +58,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Age is required"],
     },
     professionId: {
-      type: mongoose.Types.ObjectId,
+      type: Types.ObjectId,
       required: false,
     },
     country: {
@@ -84,4 +86,4 @@ const userSchema = new mongoose.Schema(
 userSchema.plugin(paginate);
 userSchema.index({ location: "2dsphere" });
 
-module.exports = Users = mongoose.model("Users", userSchema);
+export default model("Users", userSchema);

@@ -1,61 +1,14 @@
-const Users = require("../models/UserModel");
-const { getFilterPrefs } = require("../services/FilterPrefService");
+import Users from "../models/UserModel";
+import { getFilterPrefs } from "../services/FilterPrefService";
 
-const { Types } = require("mongoose");
-const catchAsync = require("../utils/catchAsync");
-const { deleteSwipes } = require("./SwipeService");
+import mongoose from "mongoose";
+import catchAsync from "../utils/catchAsync";
+import { deleteSwipes } from "./SwipeService";
 
-const userAggregate = [
-  // Join with Genders Collection
-  {
-    $lookup: {
-      from: "genders",
-      localField: "genderId",
-      foreignField: "_id",
-      pipeline: [
-        {
-          $project: {
-            _id: 1,
-            name: 1,
-          },
-        },
-      ],
-      as: "gender",
-    },
-  },
-  // Join with Professions Collection
-  {
-    $lookup: {
-      from: "professions",
-      localField: "professionId",
-      foreignField: "_id",
-      pipeline: [
-        {
-          $project: {
-            _id: 1,
-            name: 1,
-          },
-        },
-      ],
-      as: "profession",
-    },
-  },
-  // Removing fields
-  {
-    $unset: ["genderId", "professionId", "password"],
-  },
-  // Destructure gender array
-  {
-    $unwind: "$gender",
-  },
-  // Destructure profession array
-  {
-    $unwind: "$profession",
-  },
-];
+import { userAggregate } from "../utils/aggregates";
 
 //Add
-const add = catchAsync(async (req, res, next) => {
+export const add = catchAsync(async (req, res, next) => {
   const isEmailUnique = await checkEmail(req.body.email);
   if (!isEmailUnique) return next(new Error("Error! Email already taken"));
 
@@ -83,7 +36,7 @@ const updateUser = async (id, user) => {
 };
 
 //Update
-const update = catchAsync(async (req, res, next) => {
+export const update = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
   if (!existing) return next(new Error("Error! User not Found"));
 
@@ -103,9 +56,9 @@ const update = catchAsync(async (req, res, next) => {
     }
   }
 
-  const updatedUser = await updateUser(id, req.body);
+  const user = await updateUser(id, req.body);
 
-  if (updatedUser) {
+  if (user) {
     return res.status(200).json({
       success: true,
       message: "User updated successfully",
@@ -120,7 +73,7 @@ const update = catchAsync(async (req, res, next) => {
 });
 
 //Get All
-const getAll = catchAsync(async (req, res, next) => {
+export const getAll = catchAsync(async (req, res, next) => {
   const users = await getUsers();
   if (users.length > 0) {
     return res.status(201).json({
@@ -133,8 +86,8 @@ const getAll = catchAsync(async (req, res, next) => {
 });
 
 //Get One
-const get = catchAsync(async (req, res, next) => {
-  const user = await getUser({ _id: Types.ObjectId(req.params.id) });
+export const get = catchAsync(async (req, res, next) => {
+  const user = await getUser({ _id: mongoose.Types.ObjectId(req.params.id) });
   if (!user) return next(new Error("Error! User not found!"));
 
   return res.status(201).json({
@@ -145,7 +98,7 @@ const get = catchAsync(async (req, res, next) => {
 });
 
 //Delete
-const del = catchAsync(async (req, res, next) => {
+export const del = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
   if (!existing) {
     return next(new Error("Error! User not Found"));
@@ -165,7 +118,7 @@ const del = catchAsync(async (req, res, next) => {
   });
 });
 
-const getPaginated = catchAsync(async (req, res, next) => {
+export const getPaginated = catchAsync(async (req, res, next) => {
   const {
     page,
     limit,
@@ -178,7 +131,7 @@ const getPaginated = catchAsync(async (req, res, next) => {
   } = req.query;
 
   const filterPrefs = await getFilterPrefs();
-  const aggregate = [];
+  const _aggregate = [];
 
   const query = {};
   if (genderId) query.genderId = genderId;
@@ -187,7 +140,7 @@ const getPaginated = catchAsync(async (req, res, next) => {
   else if (maxAge) query.age = { $lte: maxAge };
 
   if (lat && long) {
-    aggregate.push(
+    _aggregate.push(
       {
         $geoNear: {
           near: {
@@ -207,14 +160,14 @@ const getPaginated = catchAsync(async (req, res, next) => {
       }
     );
   } else {
-    aggregate.push({
+    _aggregate.push({
       $match: query,
     });
   }
 
-  aggregate.push(...userAggregate);
+  _aggregate.push(...userAggregate);
 
-  var userAggregatePromise = Users.aggregate(aggregate);
+  var userAggregatePromise = Users.aggregate(_aggregate);
   const result = await Users.aggregatePaginate(userAggregatePromise, {
     page: page || 1,
     limit: limit || filterPrefs.filterLimit,
@@ -231,13 +184,13 @@ const getPaginated = catchAsync(async (req, res, next) => {
   });
 });
 
-const uploadPfp = catchAsync(async (req, res, next) => {
+export const uploadPfp = catchAsync(async (req, res, next) => {
   if (!req.file) return next(new Error("Error! Image upload failed"));
   const imagePath = req.file.path;
   res.json({ success: true, imagePath });
 });
 
-const updateLoc = catchAsync(async (req, res, next) => {
+export const updateLoc = catchAsync(async (req, res, next) => {
   const { id: _id, lat, long } = req.body;
 
   const existing = await Users.findOne({ _id });
@@ -260,7 +213,7 @@ const updateLoc = catchAsync(async (req, res, next) => {
   });
 });
 
-const block = catchAsync(async (req, res, next) => {
+export const block = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
   if (!existing) return next(new Error("Error! User not Found"));
   if (existing.isBlocked) return next(new Error("Error! User already blocked"));
@@ -275,7 +228,7 @@ const block = catchAsync(async (req, res, next) => {
   });
 });
 
-const unblock = catchAsync(async (req, res, next) => {
+export const unblock = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
   if (!existing) return next(new Error("Error! User not Found"));
   if (!existing.isBlocked)
@@ -302,7 +255,7 @@ async function checkUsername(username) {
 }
 
 async function getUsers(query = null) {
-  let aggregate = query
+  let _aggregate = query
     ? [
         {
           $match: { ...query },
@@ -311,7 +264,7 @@ async function getUsers(query = null) {
       ]
     : userAggregate;
 
-  const users = await Users.aggregate(aggregate);
+  const users = await Users.aggregate(_aggregate);
 
   return users;
 }
@@ -320,16 +273,3 @@ async function getUser(query) {
   const users = await getUsers(query);
   return users[0];
 }
-
-module.exports = {
-  add,
-  update,
-  get,
-  del,
-  getPaginated,
-  uploadPfp,
-  updateLoc,
-  userAggregate,
-  block,
-  unblock,
-};

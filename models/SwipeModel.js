@@ -1,13 +1,15 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+import paginate from "mongoose-aggregate-paginate-v2";
 
-const swipeSchema = new mongoose.Schema(
+const { Schema, Types, model } = mongoose;
+const swipeSchema = new Schema(
   {
     swiperId: {
-      type: mongoose.Types.ObjectId,
+      type: Types.ObjectId,
       required: [true, "Swiper User Id is required"],
     },
     swipedId: {
-      type: mongoose.Types.ObjectId,
+      type: Types.ObjectId,
       required: [true, "Swiped User Id is required"],
     },
     swipeType: {
@@ -18,4 +20,6 @@ const swipeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = Swipes = mongoose.model("Swipes", swipeSchema);
+swipeSchema.plugin(paginate);
+
+export default model("Swipes", swipeSchema);

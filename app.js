@@ -1,16 +1,15 @@
-const express = require("express");
-const rateLimit = require("express-rate-limit");
-const helmet = require("helmet");
-const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss-clean");
-var bodyParser = require("body-parser");
-const hpp = require("hpp");
-const cors = require("cors");
+import express, { json, urlencoded } from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
+import xss from "xss-clean";
+import hpp from "hpp";
+import cors from "cors";
 
-const globalErrHandler = require("./utils/errorController");
-const AppError = require("./utils/appError");
+import globalErrHandler from "./utils/errorController";
+import AppError from "./utils/appError";
 
-const routes = require("./api");
+import routes from "./api";
 const app = express();
 
 // Allow Cross-Origin requests
@@ -29,14 +28,14 @@ app.use("/apis", limiter);
 
 // Body parser, reading data from body into req.body
 app.use(
-  express.json({
+  json({
     limit: "15kb",
   })
 );
 
 // parse application/x-www-form-urlencoded
 app.use(
-  express.urlencoded({
+  urlencoded({
     extended: true,
   })
 );
@@ -61,4 +60,4 @@ app.use("*", (req, res, next) => {
 
 app.use(globalErrHandler);
 
-module.exports = app;
+export default app;
