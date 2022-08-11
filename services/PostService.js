@@ -1,14 +1,16 @@
 import Posts from "../models/PostModel";
 import { postAggregate } from "../utils/aggregates";
 import catchAsync from "../utils/catchAsync";
-
+import mongoose from "mongoose";
 import fs from "fs";
 
 export const add = catchAsync(async (req, res, next) => {
-  const post = await Posts.create({ ...req.body });
-  if (!post) {
+  const added = await Posts.create({ ...req.body });
+  if (!added) {
     return next(new Error("Error! Post cannot be added"));
   }
+
+  const post = await getPost({ _id: added._id });
 
   return res.status(201).json({
     success: true,
@@ -22,7 +24,7 @@ export const getAllArchived = catchAsync(async (req, res, next) => {
 
   if (!user) return next(new Eror("Error! User Id not provided"));
 
-  const posts = await getPosts({ userId: user });
+  const posts = await getPosts({ userId: mongoose.Types.ObjectId(user) });
 
   if (posts.length <= 0) return next(new Error("Error! Posts not found"));
 
@@ -38,7 +40,10 @@ export const getAll = catchAsync(async (req, res, next) => {
 
   if (!user) return next(new Eror("Error! User Id not provided"));
 
-  const posts = await getPosts({ userId: user, isArchived: false });
+  const posts = await getPosts({
+    userId: mongoose.Types.ObjectId(user),
+    isArchived: false,
+  });
 
   if (posts.length <= 0) return next(new Error("Error! Posts not found"));
 
@@ -50,11 +55,11 @@ export const getAll = catchAsync(async (req, res, next) => {
 });
 
 export const get = catchAsync(async (req, res, next) => {
-  const { id: _id } = req.params;
+  const { id } = req.params;
 
-  if (!_id) return next(new Eror("Error! Id not provided"));
+  if (!id) return next(new Eror("Error! Id not provided"));
 
-  const post = await getPost({ _id });
+  const post = await getPost({ _id: mongoose.Types.ObjectId(id) });
 
   if (!post) return next(new Error("Error! Posts not found"));
 
@@ -69,8 +74,8 @@ export const updateDescription = catchAsync(async (req, res, next) => {
   const existing = await Posts.findOne({ _id: req.body.id });
   if (!existing) return next(new Error("Error! Post not Found"));
 
-  const updatedPost = await Users.findByIdAndUpdate(
-    id,
+  const updatedPost = await Posts.findByIdAndUpdate(
+    req.body.id,
     { description: req.body.description },
     { new: true }
   );
@@ -91,15 +96,17 @@ export const archive = catchAsync(async (req, res, next) => {
   if (existing.isArchived)
     return next(new Error("Error! Post already archived"));
 
-  const archived = await updateUser(req.body.id, { isArchived: true });
+  const archived = await Posts.findByIdAndUpdate(
+    req.body.id,
+    { isArchived: true },
+    { new: true }
+  );
   if (!archived) return next(new Error("Error! Post could not be archived"));
-
-  const post = await getPost({ _id: archived.id });
 
   res.status(200).json({
     success: true,
     message: "Post archived successfully",
-    post,
+    post: archived,
   });
 });
 
@@ -109,16 +116,18 @@ export const unarchive = catchAsync(async (req, res, next) => {
   if (!existing.isArchived)
     return next(new Error("Error! Post already unarchived"));
 
-  const unarchived = await updateUser(req.body.id, { isArchived: true });
+  const unarchived = await Posts.findByIdAndUpdate(
+    req.body.id,
+    { isArchived: false },
+    { new: true }
+  );
   if (!unarchived)
     return next(new Error("Error! Post could not be unarchived"));
-
-  const post = await getPost({ _id: unarchived.id });
 
   res.status(200).json({
     success: true,
     message: "Post unarchived successfully",
-    post,
+    post: unarchived,
   });
 });
 
@@ -132,8 +141,10 @@ export const del = catchAsync(async (req, res, next) => {
   if (!deleted) return next(new Error("Error! Post not found"));
 
   //Delete all the swipe data
-  deleted.media.forEach((filePath) =>
-    fs.unlinkSync(filePath, (e) => console.log(e || "Deleted: ", filePath))
+  deleted.media.forEach(
+    (filePath) =>
+      fs.existsSync(filePath) &&
+      fs.unlinkSync(filePath, (e) => console.log(e || "Deleted: ", filePath))
   );
 
   return res.status(201).json({

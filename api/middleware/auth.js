@@ -2,8 +2,6 @@ import catchAsync from "../../utils/catchAsync";
 import jwt from "jsonwebtoken";
 
 const auth = catchAsync(async (req, res, next) => {
-  console.log(req.headers["authorization"]);
-
   if (req.headers["authorization"]) {
     try {
       let authorization = req.headers["authorization"].split(" ");
