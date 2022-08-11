@@ -1,6 +1,8 @@
 import { Router } from "express";
 const router = Router();
 
+import auth from "./middleware/auth";
+
 import genderRoutes from "./routes/gender.routes";
 import professionRoutes from "./routes/profession.routes";
 import userRoutes from "./routes/user.routes";
@@ -10,26 +12,20 @@ import callLogRoutes from "./routes/callLog.routes";
 import timespanRoutes from "./routes/timespan.routes";
 import planRoutes from "./routes/plan.routes";
 import subscriptionRoutes from "./routes/subscription.routes";
-// const Categories = require("./Routes/Categories");
-// const Item = require("./Routes/Item");
-// const Order = require("./Routes/Order");
-// const Payment = require("./Routes/Payment");
-// const ImageUpload = require("./Routes/ImageUpload");
+import adminRoutes from "./routes/admin.routes";
 
-/*********Main Api**********/
-router.use("/genders", genderRoutes);
-router.use("/professions", professionRoutes);
+// Protected Routes
+router.use("/genders", auth, genderRoutes);
+router.use("/professions", auth, professionRoutes);
+router.use("/swipes", auth, swipeRoutes);
+router.use("/filter-prefs", auth, filterPrefsRoutes);
+router.use("/call-logs", auth, callLogRoutes);
+router.use("/timespans", auth, timespanRoutes);
+router.use("/plans", auth, planRoutes);
+router.use("/subscriptions", auth, subscriptionRoutes);
+
+// Some Routes are authorized and some aren't
+router.use("/admin", adminRoutes);
 router.use("/users", userRoutes);
-router.use("/swipes", swipeRoutes);
-router.use("/filter-prefs", filterPrefsRoutes);
-router.use("/call-logs", callLogRoutes);
-router.use("/timespans", timespanRoutes);
-router.use("/plans", planRoutes);
-router.use("/subscriptions", subscriptionRoutes);
-// router.use("/Categories", Categories);
-// router.use("/Item", Item);
-// router.use("/Order", Order);
-// router.use("/Payment", Payment);
-// router.use("/Upload", ImageUpload);
 
 export default router;

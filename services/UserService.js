@@ -7,6 +7,38 @@ import { deleteSwipes } from "./SwipeService";
 
 import { userAggregate } from "../utils/aggregates";
 
+import jwt from "jsonwebtoken";
+import { hash, check } from "../utils/crypt";
+
+//Login
+export const login = catchAsync(async (req, res, next) => {
+  const { username, password } = req.body;
+
+  const user = await Users.findOne({ username });
+  if (!user) return next(new Error("Incorrect Email"));
+
+  if (!check(password, user.password))
+    return next(new Error("Incorrect Password"));
+
+  const token = jwt.sign(
+    { id: user._id, email: user.email, username: user.username, role: "USER" },
+    process.env.JWT_SECRET,
+    { expiresIn: "700h" }
+  );
+
+  return res.status(201).json({
+    success: true,
+    message: "User logged in successfully",
+    user: {
+      id: user._id,
+      email: user.email,
+      username: user.username,
+      name: `${user.firstName} ${user.lastName}`,
+      token,
+    },
+  });
+});
+
 //Add
 export const add = catchAsync(async (req, res, next) => {
   const isEmailUnique = await checkEmail(req.body.email);
@@ -19,13 +51,25 @@ export const add = catchAsync(async (req, res, next) => {
   const user = await Users.create({ ...req.body });
   if (!user) {
     return next(new Error("Error! User cannot be added"));
-  } else {
-    return res.status(201).json({
-      success: true,
-      message: "User added successfully",
-      user,
-    });
   }
+
+  const token = jwt.sign(
+    { id: user._id, email: user.email, username: user.username, role: "USER" },
+    process.env.JWT_SECRET,
+    { expiresIn: "700h" }
+  );
+
+  return res.status(201).json({
+    success: true,
+    message: "User signed up successfully",
+    user: {
+      id: user._id,
+      email: user.email,
+      username: user.username,
+      name: `${user.firstName} ${user.lastName}`,
+      token,
+    },
+  });
 });
 
 const updateUser = async (id, user) => {
@@ -247,6 +291,23 @@ export const unblock = catchAsync(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "User unblocked successfully",
+    user,
+  });
+});
+
+export const updatePassword = catchAsync(async (req, res, next) => {
+  const existing = await Users.findOne({ _id: req.body.id });
+  if (!existing) return next(new Error("Error! User not Found"));
+
+  const user = await updateUser(req.body.id, {
+    password: hash(req.body.password),
+  });
+
+  if (!user) return next(new Error("Error! Password could not be updated"));
+
+  res.status(200).json({
+    success: true,
+    message: "Password updated successfully",
     user,
   });
 });

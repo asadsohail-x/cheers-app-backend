@@ -1,6 +1,8 @@
 import Admins from "../models/AdminModel";
 import catchAsync from "../utils/catchAsync";
-import { hash, check } from "../utils/Crypt";
+
+import jwt from "jsonwebtoken";
+import { hash, check } from "../utils/crypt";
 
 export const add = catchAsync(async (req, res, next) => {
   const existing = await Admins.findOne({ email: req.body.email });
@@ -29,7 +31,7 @@ export const login = catchAsync(async (req, res, next) => {
 
   const admin = await Admins.findOne({ email });
   if (!admin) return next(new Error("Incorrect Email"));
-  if (check(admin.password, password))
+  if (!check(password, admin.password))
     return next(new Error("Incorrect Password"));
 
   const token = jwt.sign(
@@ -41,6 +43,36 @@ export const login = catchAsync(async (req, res, next) => {
   return res.status(201).json({
     success: true,
     message: "Admin logged in successfully",
-    admin: { id: admin._id, email: admin.email, token },
+    admin: {
+      id: admin._id,
+      email: admin.email,
+      name: admin.name,
+      token,
+    },
+  });
+});
+
+export const updatePassword = catchAsync(async (req, res, next) => {
+  const existing = await Admins.findOne({ _id: req.body.id });
+  if (!existing) return next(new Error("Error! Admin not Found"));
+
+  const admin = await Admins.findByIdAndUpdate(
+    req.body.id,
+    {
+      password: hash(req.body.password),
+    },
+    { new: true }
+  );
+
+  if (!admin) return next(new Error("Error! Password could not be updated"));
+
+  res.status(200).json({
+    success: true,
+    message: "Password updated successfully",
+    admin: {
+      id: admin._id,
+      email: admin.email,
+      name: admin.name,
+    },
   });
 });
