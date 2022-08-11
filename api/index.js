@@ -13,6 +13,7 @@ import timespanRoutes from "./routes/timespan.routes";
 import planRoutes from "./routes/plan.routes";
 import subscriptionRoutes from "./routes/subscription.routes";
 import adminRoutes from "./routes/admin.routes";
+import postRoutes from "./routes/post.routes";
 
 // Protected Routes
 router.use("/genders", auth, genderRoutes);
@@ -24,8 +25,9 @@ router.use("/timespans", auth, timespanRoutes);
 router.use("/plans", auth, planRoutes);
 router.use("/subscriptions", auth, subscriptionRoutes);
 
-// Some Routes are authorized and some aren't
+// Routes with embedded middleware
 router.use("/admin", adminRoutes);
 router.use("/users", userRoutes);
+router.use("/posts", postRoutes);
 
 export default router;

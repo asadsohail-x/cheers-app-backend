@@ -1,16 +1,27 @@
-const { Schema, model, Types } = require("mongoose");
+import mongoose from "mongoose";
+const { Schema, model, Types } = mongoose;
 
-module.exports = model(
+const mediaLimit = (c) => c > 0 && c < 9;
+
+export default model(
   "Posts",
   new Schema(
     {
-      authorId: {
+      userId: {
         type: Types.ObjectId,
-        required: [true, "Author Id is required"],
+        required: [true, "User is required"],
       },
-      picture: {
+      media: {
+        type: [{ type: String }],
+        validate: [
+          mediaLimit,
+          "Post Media must be more than 0 and less than 9",
+        ],
+        required: [true, "Post Media is required"],
+      },
+      description: {
         type: String,
-        required: [true, "Picture URL is required"],
+        required: [true, "Description is required"],
       },
       isArchived: {
         type: Boolean,

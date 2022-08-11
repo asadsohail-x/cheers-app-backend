@@ -162,3 +162,21 @@ export const subscriptionAggregate = [
     $unwind: "$user",
   },
 ];
+
+export const postAggregate = [
+  {
+    $lookup: {
+      from: "users",
+      localField: "userId",
+      foreignField: "_id",
+      pipeline: userAggregate,
+      as: "user",
+    },
+  },
+  {
+    $unset: "userId",
+  },
+  {
+    $unwind: "$user",
+  },
+];
