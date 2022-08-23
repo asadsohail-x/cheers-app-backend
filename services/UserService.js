@@ -15,10 +15,19 @@ export const login = catchAsync(async (req, res, next) => {
   const { username, password } = req.body;
 
   const user = await Users.findOne({ username });
-  if (!user) return next(new Error("Incorrect Email"));
+  if (!user) {
+    return res.json({
+      success: false,
+      message: "Incorrect Email",
+    });
+  }
 
-  if (!check(password, user.password))
-    return next(new Error("Incorrect Password"));
+  if (!check(password, user.password)) {
+    return res.json({
+      success: false,
+      message: "Incorrect Password",
+    });
+  }
 
   const token = jwt.sign(
     { id: user._id, email: user.email, username: user.username, role: "USER" },
@@ -26,7 +35,7 @@ export const login = catchAsync(async (req, res, next) => {
     { expiresIn: "700h" }
   );
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "User logged in successfully",
     user: {
@@ -42,15 +51,27 @@ export const login = catchAsync(async (req, res, next) => {
 //Add
 export const add = catchAsync(async (req, res, next) => {
   const isEmailUnique = await checkEmail(req.body.email);
-  if (!isEmailUnique) return next(new Error("Error! Email already taken"));
+  if (!isEmailUnique) {
+    return res.json({
+      success: false,
+      message: "Email already taken",
+    });
+  }
 
   const isUsernameUnique = await checkUsername(req.body.username);
-  if (!isUsernameUnique)
-    return next(new Error("Error! Username already taken"));
+  if (!isUsernameUnique) {
+    return res.json({
+      success: false,
+      message: "Username already taken",
+    });
+  }
 
   const user = await Users.create({ ...req.body });
   if (!user) {
-    return next(new Error("Error! User cannot be added"));
+    return res.json({
+      success: false,
+      message: "User could not be added",
+    });
   }
 
   const token = jwt.sign(
@@ -59,7 +80,7 @@ export const add = catchAsync(async (req, res, next) => {
     { expiresIn: "700h" }
   );
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "User signed up successfully",
     user: {
@@ -82,51 +103,52 @@ const updateUser = async (id, user) => {
 //Update
 export const update = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
-  if (!existing) return next(new Error("Error! User not Found"));
+  if (!existing) {
+    return res.json({
+      success: false,
+      message: "User not found",
+    });
+  }
 
   const { id, email, username } = req.body;
   if (email) {
     if (email !== existing.email) {
       const isEmailUnique = await checkEmail(email);
-      if (!isEmailUnique) return next(new Error("Error! Email already taken"));
+      if (!isEmailUnique) {
+        return res.json({
+          success: false,
+          message: "Email already taken",
+        });
+      }
     }
   }
 
   if (username) {
     if (username !== existing.username) {
       const isUsernameUnique = await checkUsername(username);
-      if (!isUsernameUnique)
-        return next(new Error("Error! Username already taken"));
+      if (!isUsernameUnique) {
+        return res.json({
+          success: false,
+          message: "Username already taken",
+        });
+      }
     }
   }
 
   const user = await updateUser(id, req.body);
 
   if (user) {
-    return res.status(200).json({
+    return res.json({
       success: true,
       message: "User updated successfully",
       user,
     });
   }
 
-  return res.status(500).json({
+  return res.json({
     success: false,
-    message: "Error! User could not be updated",
+    message: "User could not be updated",
   });
-});
-
-//Get All
-export const getAll = catchAsync(async (req, res, next) => {
-  const users = await getUsers({ isBlocked: false });
-  if (users.length > 0) {
-    return res.status(201).json({
-      success: true,
-      message: "Users found",
-      users,
-    });
-  }
-  return next(new Error(" Error! Users not found!"));
 });
 
 //Get One
@@ -135,9 +157,15 @@ export const get = catchAsync(async (req, res, next) => {
     _id: mongoose.Types.ObjectId(req.params.id),
     isBlocked: false,
   });
-  if (!user) return next(new Error("Error! User not found!"));
 
-  return res.status(201).json({
+  if (!user) {
+    return res.json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  return res.json({
     success: true,
     message: "User found",
     user,
@@ -148,17 +176,25 @@ export const get = catchAsync(async (req, res, next) => {
 export const del = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! User not Found"));
+    return res.json({
+      success: false,
+      message: "User not found",
+    });
   }
 
   const deletedUser = await Users.findOneAndDelete({ _id: req.body.id });
-  if (!deletedUser) return next(new Error("Error! User not found"));
+  if (!deletedUser) {
+    return res.json({
+      success: false,
+      message: "User could not be deleted",
+    });
+  }
 
   //Delete all the swipe data
   const deletedSwipes = await deleteSwipes(existing._id);
   console.log(deletedSwipes);
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "User deleted successfully",
     user: deletedUser,
@@ -226,7 +262,12 @@ export const getPaginated = catchAsync(async (req, res, next) => {
 
   let users = [...result.docs];
 
-  if (users.length <= 0) return next(new Error("Error! Users not found"));
+  if (users.length <= 0) {
+    return res.json({
+      success: false,
+      message: "Users not found",
+    });
+  }
 
   res.status(201).json({
     success: true,
@@ -236,7 +277,13 @@ export const getPaginated = catchAsync(async (req, res, next) => {
 });
 
 export const uploadPfp = catchAsync(async (req, res, next) => {
-  if (!req.file) return next(new Error("Error! Image upload failed"));
+  if (!req.file) {
+    return res.json({
+      success: false,
+      message: "Image could not be uploaded",
+    });
+  }
+
   const imagePath = req.file.path;
   res.json({ success: true, imagePath });
 });
@@ -246,7 +293,12 @@ export const updateLoc = catchAsync(async (req, res, next) => {
 
   const existing = await Users.findOne({ _id });
 
-  if (!existing) return next(new Error("Error! User not found"));
+  if (!existing) {
+    return res.json({
+      success: false,
+      message: "User not found",
+    });
+  }
 
   const updatedUser = await Users.findByIdAndUpdate(
     _id,
@@ -254,10 +306,14 @@ export const updateLoc = catchAsync(async (req, res, next) => {
     { new: true }
   );
 
-  if (!updatedUser)
-    return next(new Error("Error! User Location could not be updated"));
+  if (!updatedUser) {
+    return res.json({
+      success: false,
+      message: "User Location could not be updated",
+    });
+  }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "User location updated successfully",
     user: { _id: updatedUser._id, location: updatedUser.location.coordinates },
@@ -266,13 +322,29 @@ export const updateLoc = catchAsync(async (req, res, next) => {
 
 export const block = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
-  if (!existing) return next(new Error("Error! User not Found"));
-  if (existing.isBlocked) return next(new Error("Error! User already blocked"));
+  if (!existing) {
+    return res.json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  if (existing.isBlocked) {
+    return res.json({
+      success: false,
+      message: "User already blocked",
+    });
+  }
 
   const blockedUser = await updateUser(req.body.id, { isBlocked: true });
-  if (!blockedUser) return next(new Error("Error! User could not be blocked"));
+  if (!blockedUser) {
+    return res.json({
+      success: false,
+      message: "User could not be blocked",
+    });
+  }
 
-  res.status(200).json({
+  res.json({
     success: true,
     message: "User blocked successfully",
     user: blockedUser,
@@ -281,14 +353,29 @@ export const block = catchAsync(async (req, res, next) => {
 
 export const unblock = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
-  if (!existing) return next(new Error("Error! User not Found"));
-  if (!existing.isBlocked)
-    return next(new Error("Error! User already unblocked"));
+  if (!existing) {
+    return res.json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  if (!existing.isBlocked) {
+    return res.json({
+      success: false,
+      message: "User already unblocked",
+    });
+  }
 
   const user = await updateUser(req.body.id, { isBlocked: false });
-  if (!user) return next(new Error("Error! User could not be blocked"));
+  if (!user) {
+    return res.json({
+      success: false,
+      message: "User could not be unblocked",
+    });
+  }
 
-  res.status(200).json({
+  res.json({
     success: true,
     message: "User unblocked successfully",
     user,
@@ -297,15 +384,25 @@ export const unblock = catchAsync(async (req, res, next) => {
 
 export const updatePassword = catchAsync(async (req, res, next) => {
   const existing = await Users.findOne({ _id: req.body.id });
-  if (!existing) return next(new Error("Error! User not Found"));
+  if (!existing) {
+    return res.json({
+      success: false,
+      message: "User not found",
+    });
+  };
 
   const user = await updateUser(req.body.id, {
     password: hash(req.body.password),
   });
 
-  if (!user) return next(new Error("Error! Password could not be updated"));
+  if (!user) {
+    return res.json({
+      success: false,
+      message: "Password could not be updated",
+    });
+  }
 
-  res.status(200).json({
+  res.json({
     success: true,
     message: "Password updated successfully",
     user,

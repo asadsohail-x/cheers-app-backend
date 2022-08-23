@@ -4,25 +4,34 @@ import catchAsync from "../utils/catchAsync";
 export const add = catchAsync(async (req, res, next) => {
   const existing = await Genders.findOne({ name: req.body.name });
   if (existing) {
-    return next(new Error("Error! Gender with this name already exist"));
+    return res.json({
+      success: false,
+      message: "Gender with this name already exists",
+    });
   }
 
   const gender = await Genders.create({ ...req.body });
   if (!gender) {
-    throw new Error("Error! Gender cannot be added");
-  } else {
-    return res.status(201).json({
-      success: true,
-      message: "Gender added successfully",
-      gender,
+    return res.json({
+      success: false,
+      message: "Gender could not be added",
     });
   }
+
+  return res.json({
+    success: true,
+    message: "Gender added successfully",
+    gender,
+  });
 });
 
 export const update = catchAsync(async (req, res, next) => {
   const existing = await Genders.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Gender not Found"));
+    return res.json({
+      success: false,
+      message: "Gender not found",
+    });
   }
 
   const gender = await Genders.findByIdAndUpdate(
@@ -41,9 +50,9 @@ export const update = catchAsync(async (req, res, next) => {
     });
   }
 
-  return res.status(500).json({
+  return res.json({
     success: false,
-    message: "Error! Gender could not be updated",
+    message: "Gender could not be updated",
   });
 });
 
@@ -55,18 +64,24 @@ export const getAll = catchAsync(async (req, res, next) => {
       message: "Genders found",
       genders,
     });
-  } else {
-    return next(new Error("Error! Genders not found"));
   }
+
+  return res.json({
+    success: false,
+    message: "Genders not found",
+  });
 });
 
 export const get = catchAsync(async (req, res, next) => {
   const gender = await Genders.findOne({ _id: req.params.id });
   if (!gender) {
-    throw new Error("Error! Gender Not Found");
+    return res.json({
+      success: false,
+      message: "Gender not found",
+    });
   }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Gender found",
     gender,
@@ -76,15 +91,21 @@ export const get = catchAsync(async (req, res, next) => {
 export const del = catchAsync(async (req, res, next) => {
   const existing = await Genders.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Gender not Found"));
+    return res.json({
+      success: false,
+      message: "Gender not found",
+    });
   }
 
   const deletedGender = await Genders.findOneAndDelete({ _id: req.body.id });
   if (!deletedGender) {
-    return next(new Error("Error! Gender not found"));
+    return res.json({
+      success: false,
+      message: "Gender could not be deleted",
+    });
   }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Gender deleted successfully",
     gender: deletedGender,

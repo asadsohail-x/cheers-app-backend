@@ -8,7 +8,10 @@ export const add = catchAsync(async (req, res, next) => {
   };
   const existing = await Timespans.findOne(timespanData);
   if (existing) {
-    return next(new Error("Error! Timespan already exist"));
+    return res.json({
+      success: false,
+      message: "Timepsn not found",
+    });
   }
 
   const timespan = await Timespans.create(timespanData);

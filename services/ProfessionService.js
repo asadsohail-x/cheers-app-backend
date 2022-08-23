@@ -4,25 +4,34 @@ import catchAsync from "../utils/catchAsync";
 export const add = catchAsync(async (req, res, next) => {
   const existing = await Professions.findOne({ name: req.body.name });
   if (existing) {
-    return next(new Error("Error! Profession with this name already exist"));
+    return res.json({
+      success: false,
+      message: "Profession with name already exists",
+    });
   }
 
   const profession = await Professions.create({ ...req.body });
   if (!profession) {
-    throw new Error("Error! Profession cannot be added");
-  } else {
-    return res.status(201).json({
-      success: true,
-      message: "Profession added successfully",
-      profession,
+    return res.json({
+      success: false,
+      message: "Profession could not be added",
     });
   }
+
+  return res.json({
+    success: true,
+    message: "Profession added successfully",
+    profession,
+  });
 });
 
 export const update = catchAsync(async (req, res, next) => {
   const existing = await Professions.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Profession not Found"));
+    return res.json({
+      success: false,
+      message: "Profession not found",
+    });
   }
 
   const profession = await Professions.findByIdAndUpdate(
@@ -41,9 +50,9 @@ export const update = catchAsync(async (req, res, next) => {
     });
   }
 
-  return res.status(500).json({
+  return res.json({
     success: false,
-    message: "Error! Profession could not be updated",
+    message: "Profession could not be updated",
   });
 });
 
@@ -55,18 +64,24 @@ export const getAll = catchAsync(async (req, res, next) => {
       message: "Professions found",
       professions,
     });
-  } else {
-    throw new Error("Error! Professions not found");
   }
+
+  return res.json({
+    success: false,
+    message: "Professions not found",
+  });
 });
 
 export const get = catchAsync(async (req, res, next) => {
   const profession = await Professions.findOne({ _id: req.params.id });
   if (!profession) {
-    throw new Error("Error! Profession Not Found");
+    return res.json({
+      success: false,
+      message: "Profession not found",
+    });
   }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Profession found",
     profession,
@@ -76,17 +91,23 @@ export const get = catchAsync(async (req, res, next) => {
 export const del = catchAsync(async (req, res, next) => {
   const existing = await Professions.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Profession not Found"));
+    return res.json({
+      success: false,
+      message: "Profession not found",
+    });
   }
 
   const deletedProfession = await Professions.findOneAndDelete({
     _id: req.body.id,
   });
   if (!deletedProfession) {
-    return next(new Error("Error! Profession not found"));
+    return res.json({
+      success: false,
+      message: "Profession could not be deleted",
+    });
   }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Profession deleted successfully",
     profession: deletedProfession,

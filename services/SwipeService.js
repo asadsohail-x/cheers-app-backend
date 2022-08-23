@@ -10,7 +10,10 @@ export const add = catchAsync(async (req, res, next) => {
   const { swiperId, swipedId, swipeType } = req.body;
 
   if (swiperId === swipedId) {
-    return next(new Error("Error! Cannot swipe yourself"));
+    return res.json({
+      success: false,
+      message: "User cannot swipe oneself",
+    });
   }
 
   const swipeData = {
@@ -21,17 +24,23 @@ export const add = catchAsync(async (req, res, next) => {
 
   const existing = await Swipes.findOne(swipeData);
   if (existing) {
-    return next(new Error("Error! Swipe already exist"));
+    return res.json({
+      success: false,
+      message: "Swipe already exists",
+    });
   }
 
   const addedSwipe = await Swipes.create(swipeData);
   if (!addedSwipe) {
-    return next(new Error("Error! Swipe cannot be added"));
+    return res.json({
+      success: false,
+      message: "Swipe could not be added",
+    });
   }
 
   const swipe = await getSwipe({ _id: addedSwipe._id });
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Swipe added successfully",
     swipe,
@@ -42,10 +51,13 @@ export const add = catchAsync(async (req, res, next) => {
 export const get = catchAsync(async (req, res, next) => {
   const swipe = await getSwipe({ _id: mongoose.Types.ObjectId(req.params.id) });
   if (!swipe) {
-    return next(new Error("Error! Swipe Not Found"));
+    return res.json({
+      success: false,
+      message: "Swipe not found",
+    });
   }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Swipe found",
     swipe,
@@ -65,17 +77,24 @@ export const deleteSwipes = async (userId) => {
 export const del = catchAsync(async (req, res, next) => {
   const existing = await Swipes.findOne({ _id: req.body.id });
   if (!existing) {
-    return next(new Error("Error! Swipe not Found"));
+    return res.json({
+      success: false,
+      message: "Swipe not found",
+    });
   }
 
   const deletedSwipe = await Swipes.findOneAndDelete({
     _id: req.body.id,
   });
+
   if (!deletedSwipe) {
-    return next(new Error("Error! Swipe not found"));
+    return res.json({
+      success: false,
+      message: "Swipe could not be deleted",
+    });
   }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Swipe deleted successfully",
     swipe: deletedSwipe,
@@ -86,10 +105,14 @@ export const delByUser = catchAsync(async (req, res, next) => {
   //Delete all the swipe data
   const deleteResult = await deleteSwipes(req.body.user);
   console.log(deleteResult);
-  if (!deleteResult?.deleteCount)
-    return next(new Error("Swipes could not be deleted"));
+  if (!deleteResult?.deleteCount) {
+    return res.json({
+      success: false,
+      message: "Swipes could not be deleted",
+    });
+  }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Swipes deleted successfully",
   });
@@ -121,9 +144,14 @@ export const getAll = catchAsync(async (req, res, next) => {
 
   let swipes = [...result.docs];
 
-  if (swipes.length <= 0) return next(new Error("Error! Swipes not found"));
+  if (swipes.length <= 0) {
+    return res.json({
+      success: false,
+      message: "Swipes not found",
+    });
+  }
 
-  res.status(201).json({
+  res.json({
     success: true,
     message: "Swipes found",
     swipes,

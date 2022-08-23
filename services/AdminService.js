@@ -7,7 +7,10 @@ import { hash, check } from "../utils/crypt";
 export const add = catchAsync(async (req, res, next) => {
   const existing = await Admins.findOne({ email: req.body.email });
   if (existing) {
-    return next(new Error("Error! Email already exists"));
+    return res.json({
+      success: false,
+      message: "Email already taken",
+    });
   }
 
   const { password: pass } = req.body;
@@ -15,10 +18,14 @@ export const add = catchAsync(async (req, res, next) => {
   const password = hash(pass);
 
   const admin = await Admins.create({ ...req.body, password });
+
   if (!admin) {
-    throw new Error("Error! Admin cannot be added");
+    return res.json({
+      success: false,
+      message: "Admin could not be created",
+    });
   } else {
-    return res.status(201).json({
+    return res.json({
       success: true,
       message: "Admin added successfully",
       admin,
@@ -30,9 +37,18 @@ export const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
   const admin = await Admins.findOne({ email });
-  if (!admin) return next(new Error("Incorrect Email"));
-  if (!check(password, admin.password))
-    return next(new Error("Incorrect Password"));
+  if (!admin) {
+    return res.json({
+      success: false,
+      message: "Incorrect Email",
+    });
+  }
+  if (!check(password, admin.password)) {
+    return res.json({
+      success: false,
+      message: "Incorrect Password",
+    });
+  }
 
   const token = jwt.sign(
     { id: admin._id, email: admin.email, role: "ADMIN" },
@@ -40,7 +56,7 @@ export const login = catchAsync(async (req, res, next) => {
     { expiresIn: "700h" }
   );
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Admin logged in successfully",
     admin: {
@@ -54,7 +70,12 @@ export const login = catchAsync(async (req, res, next) => {
 
 export const updatePassword = catchAsync(async (req, res, next) => {
   const existing = await Admins.findOne({ _id: req.body.id });
-  if (!existing) return next(new Error("Error! Admin not Found"));
+  if (!existing) {
+    return res.json({
+      success: false,
+      message: "Admin not found",
+    });
+  }
 
   const admin = await Admins.findByIdAndUpdate(
     req.body.id,
@@ -64,9 +85,14 @@ export const updatePassword = catchAsync(async (req, res, next) => {
     { new: true }
   );
 
-  if (!admin) return next(new Error("Error! Password could not be updated"));
+  if (!admin) {
+    return res.json({
+      success: false,
+      message: "Password could not be updated",
+    });
+  }
 
-  res.status(200).json({
+  res.json({
     success: true,
     message: "Password updated successfully",
     admin: {

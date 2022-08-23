@@ -4,9 +4,14 @@ import catchAsync from "../utils/catchAsync";
 export const get = catchAsync(async (req, res, next) => {
   const filterPrefs = await getFilterPrefs();
 
-  if (!filterPrefs) return next(new Error("Error! FilterPrefs not found!"));
+  if (!filterPrefs) {
+    return res.json({
+      success: false,
+      message: "Filter Preferences not found",
+    });
+  }
 
-  return res.status(201).json({
+  return res.json({
     success: true,
     message: "Filter Preferences found",
     filterPrefs,
@@ -36,11 +41,14 @@ export const save = catchAsync(async (req, res) => {
     );
 
   if (filterPrefs)
-    res.status(201).json({
+    res.json({
       success: true,
       message: "Filter Preferences saved",
       filterPrefs,
     });
 
-  return new Error("Error! Filter Preferences could not be saved");
+  return res.json({
+    success: false,
+    message: "Filter Preferences could be not saved",
+  });
 });
