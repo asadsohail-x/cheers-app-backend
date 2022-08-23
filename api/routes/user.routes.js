@@ -68,7 +68,7 @@ route.patch("/block", auth, block);
 route.patch("/unblock", auth, unblock);
 route.put(
   "/upload-pfp",
-  [auth, (...rest) => imageUploader("profile-photo", ...rest)],
+  (...rest) => imageUploader("profile-photo", ...rest),
   uploadPfp
 );
 

@@ -16,8 +16,8 @@ import adminRoutes from "./routes/admin.routes";
 import postRoutes from "./routes/post.routes";
 
 // Protected Routes
-router.use("/genders", auth, genderRoutes);
-router.use("/professions", auth, professionRoutes);
+router.use("/genders", genderRoutes);
+router.use("/professions", professionRoutes);
 router.use("/swipes", auth, swipeRoutes);
 router.use("/filter-prefs", auth, filterPrefsRoutes);
 router.use("/call-logs", auth, callLogRoutes);
