@@ -1,4 +1,6 @@
 import Users from "../models/UserModel";
+import OTPs from "../models/OTPModel";
+
 import { getFilterPrefs } from "../services/FilterPrefService";
 
 import mongoose from "mongoose";
@@ -10,6 +12,8 @@ import { userAggregate } from "../utils/aggregates";
 import jwt from "jsonwebtoken";
 import { hash, check } from "../utils/crypt";
 
+import { getEmailBody, sendMail } from "../utils/mailer";
+
 //Login
 export const login = catchAsync(async (req, res, next) => {
   const { username, password } = req.body;
@@ -18,7 +22,7 @@ export const login = catchAsync(async (req, res, next) => {
   if (!user) {
     return res.json({
       success: false,
-      message: "Incorrect Email",
+      message: "Incorrect Username",
     });
   }
 
@@ -389,7 +393,7 @@ export const updatePassword = catchAsync(async (req, res, next) => {
       success: false,
       message: "User not found",
     });
-  };
+  }
 
   const user = await updateUser(req.body.id, {
     password: hash(req.body.password),
@@ -408,6 +412,72 @@ export const updatePassword = catchAsync(async (req, res, next) => {
     user,
   });
 });
+
+export const generateOTP = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  const existing = await Users.findOne({ email });
+  if (!existing) {
+    return res.json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  // generate a unique OTP
+  const OTP = getRandomNumber(1000, 9999);
+  const htmlBody = getEmailBody(OTP);
+
+  sendMail(email, htmlBody, "Email Verifications");
+
+  // store the OTP to the server
+  const createdOTP = await OTPs.create({ email, OTP });
+
+  return res.json({
+    success: true,
+    message: `Email sent to successfully to: ${email}`,
+    id: createdOTP._id,
+  });
+});
+
+export const verifyOTP = catchAsync(async (req, res, next) => {
+  const { id, enteredOTP } = req.body;
+
+  const existing = await OTPs.findOne({ _id: id });
+  if (!existing) {
+    return res.json({
+      success: false,
+      message: "OTP not found",
+    });
+  }
+
+  const { createdAt, expiresIn } = existing;
+
+  const currentDate = new Date();
+  const differenceInMS = +currentDate - +createdAt;
+  const minutesSinceCreation = differenceInMS / 1000 / 60;
+
+  console.log(minutesSinceCreation);
+
+  if (minutesSinceCreation > expiresIn) {
+    return res.json({ success: false, message: "OTP has expired" });
+  }
+
+  if (existing.OTP !== parseFloat(enteredOTP)) {
+    return res.json({ success: false, message: "Invalid OTP" });
+  }
+
+  const user = await Users.findOne({ email: existing.email });
+
+  return res.json({
+    success: true,
+    message: "OTP verified successfully",
+    userId: user._id,
+  });
+});
+
+const getRandomNumber = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1) + min);
 
 async function checkEmail(email) {
   let result = await Users.find({ email });

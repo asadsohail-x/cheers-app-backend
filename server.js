@@ -27,12 +27,9 @@ mongoose
       console.log(`> Server listening on port: ${PORT}`);
     });
 
-    process.on("unhandledRejection", (err) => {
-      console.log("UNHANDLED REJECTION!!!  shutting down ..");
-      console.log("====>", err);
-      console.log(err.name, err.message);
-      server.close(() => {
-        process.exit(1);
-      });
-    });
+    // process.on("unhandledRejection", (err) => {
+    //   console.log("UNHANDLED REJECTION!!!  shutting down ..");
+    //   console.log("====>", err);
+    //   console.log(err.name, err.message);
+    // });
   });

@@ -12,6 +12,8 @@ import {
   updateLoc,
   block,
   unblock,
+  generateOTP,
+  verifyOTP,
 } from "../../services/UserService";
 
 import imageUploader from "../../utils/userPfpUploader";
@@ -71,5 +73,8 @@ route.put(
   (...rest) => imageUploader("profile-photo", ...rest),
   uploadPfp
 );
+
+route.post("/generate-otp", generateOTP);
+route.post("/verify-otp", verifyOTP);
 
 export default route;
