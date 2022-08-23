@@ -103,37 +103,6 @@ export const get = catchAsync(async (req, res, next) => {
   });
 });
 
-export const updateDescription = catchAsync(async (req, res, next) => {
-  const existing = await Posts.findOne({ _id: req.body.id });
-  if (!existing) {
-    return res.json({
-      success: false,
-      message: "Post not found",
-    });
-  }
-
-  const updatedPost = await Posts.findByIdAndUpdate(
-    req.body.id,
-    { description: req.body.description },
-    { new: true }
-  );
-
-  if (!updatedPost) {
-    return res.json({
-      success: false,
-      message: "Post could not be updated",
-    });
-  }
-
-  const post = await getPost({ _id: updatedPost._id });
-
-  res.status(200).json({
-    success: true,
-    message: "Post updated successfully",
-    post,
-  });
-});
-
 export const archive = catchAsync(async (req, res, next) => {
   const existing = await Posts.findOne({ _id: req.body.id });
   if (!existing) {

@@ -13,10 +13,6 @@ export default model(
         type: [{ type: String }],
         required: [true, "Post Media is required"],
       },
-      description: {
-        type: String,
-        required: false,
-      },
       isArchived: {
         type: Boolean,
         default: false,
