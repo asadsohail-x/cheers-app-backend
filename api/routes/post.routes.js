@@ -2,7 +2,6 @@ import { Router } from "express";
 const route = Router();
 import {
   uploadMedia,
-  updateDescription,
   archive,
   unarchive,
   add,
@@ -20,7 +19,6 @@ route.get("/get-archived", auth, getAllArchived);
 route.get("/get/:id", auth, get);
 route.put("/add", auth, add);
 route.delete("/delete", auth, del);
-route.patch("/update-description", auth, updateDescription);
 route.patch("/archive", auth, archive);
 route.patch("/unarchive", auth, unarchive);
 
