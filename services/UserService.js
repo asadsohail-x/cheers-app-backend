@@ -387,7 +387,8 @@ export const unblock = catchAsync(async (req, res, next) => {
 });
 
 export const updatePassword = catchAsync(async (req, res, next) => {
-  const existing = await Users.findOne({ _id: req.body.id });
+  const { id, password, oldPassword } = req.body;
+  const existing = await Users.findOne({ _id: id });
   if (!existing) {
     return res.json({
       success: false,
@@ -395,8 +396,17 @@ export const updatePassword = catchAsync(async (req, res, next) => {
     });
   }
 
-  const user = await updateUser(req.body.id, {
-    password: hash(req.body.password),
+  if (oldPassword) {
+    if (!check(oldPassword, existing.password)) {
+      return res.json({
+        success: false,
+        message: "Old Password is incorrect",
+      });
+    }
+  }
+
+  const user = await updateUser(id, {
+    password: hash(password),
   });
 
   if (!user) {
