@@ -51,7 +51,7 @@ app.use(hpp());
 
 // Routes
 app.use("/api", routes);
-
+app.use("/uploads", express.static('./uploads'));
 // handle undefined Routes
 app.use("*", (req, res, next) => {
   const err = new AppError(404, "fail", "undefined route");

@@ -61,7 +61,7 @@ import auth from "../middleware/auth";
 route.post("/login", login);
 route.put("/add", add);
 route.patch("/update", auth, update);
-route.patch("/update-password", auth, updatePassword);
+route.patch("/update-password", updatePassword);
 route.get("/getAll", auth, getPaginated);
 route.get("/get/:id", auth, get);
 route.delete("/delete", auth, del);
