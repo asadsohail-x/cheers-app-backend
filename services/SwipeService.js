@@ -5,6 +5,9 @@ import { getFilterPrefs } from "./FilterPrefService";
 
 import { swipeAggregate } from "../utils/aggregates";
 
+import mongoose from "mongoose";
+const { Types } = mongoose;
+
 //Add
 export const add = catchAsync(async (req, res, next) => {
   const { swiperId, swipedId, swipeType } = req.body;
@@ -125,7 +128,7 @@ export const getAll = catchAsync(async (req, res, next) => {
   const _aggregate = [];
 
   const query = {};
-  if (user) query.swiperId = user;
+  if (user) query.swiperId = Types.ObjectId(user);
   if (swipeType) query.swipeType = swipeType.toUpperCase() === "RIGHT";
 
   if (query) {
