@@ -75,7 +75,7 @@ export const deleteSwipes = async (userId) => {
 
 //Delete
 export const del = catchAsync(async (req, res, next) => {
-  const existing = await Swipes.findOne({ _id: req.body.id });
+  const existing = await Swipes.findOne({ _id: req.query.id });
   if (!existing) {
     return res.json({
       success: false,
@@ -84,7 +84,7 @@ export const del = catchAsync(async (req, res, next) => {
   }
 
   const deletedSwipe = await Swipes.findOneAndDelete({
-    _id: req.body.id,
+    _id: req.query.id,
   });
 
   if (!deletedSwipe) {
@@ -103,7 +103,7 @@ export const del = catchAsync(async (req, res, next) => {
 
 export const delByUser = catchAsync(async (req, res, next) => {
   //Delete all the swipe data
-  const deleteResult = await deleteSwipes(req.body.user);
+  const deleteResult = await deleteSwipes(req.query.user);
   console.log(deleteResult);
   if (!deleteResult?.deleteCount) {
     return res.json({

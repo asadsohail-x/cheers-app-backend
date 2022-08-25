@@ -8,6 +8,6 @@ route.put("/add", add);
 route.get("/getAll", getAll);
 route.get("/get/:id", get);
 route.delete("/delete", del);
-route.delete("/delete/user/:user", delByUser);
+route.delete("/delete/user", delByUser);
 
 export default route;
