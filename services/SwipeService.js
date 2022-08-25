@@ -5,7 +5,6 @@ import { getFilterPrefs } from "./FilterPrefService";
 
 import { swipeAggregate } from "../utils/aggregates";
 
-import mongoose from "mongoose";
 const { Types } = mongoose;
 
 //Add
