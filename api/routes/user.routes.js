@@ -63,7 +63,7 @@ route.put("/add", add);
 route.patch("/update", auth, update);
 route.patch("/update-password", updatePassword);
 route.get("/getAll", auth, getPaginated);
-route.get("/get/:id", auth, get);
+route.get("/get", auth, get);
 route.delete("/delete", auth, del);
 route.patch("/updateLoc", auth, updateLoc);
 route.patch("/block", auth, block);

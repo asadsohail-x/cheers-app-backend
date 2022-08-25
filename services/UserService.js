@@ -157,10 +157,38 @@ export const update = catchAsync(async (req, res, next) => {
 
 //Get One
 export const get = catchAsync(async (req, res, next) => {
-  const user = await getUser({
-    _id: mongoose.Types.ObjectId(req.params.id),
-    isBlocked: false,
-  });
+  const { lat, long } = req.query;
+
+  let user = null;
+
+  if (lat && long) {
+    const result = await Users.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [parseFloat(long), parseFloat(lat)],
+          },
+          distanceMultiplier: 0.000621371 * 1.61,
+          distanceField: "distance",
+          spherical: true,
+        },
+      },
+      {
+        $match: {
+          _id: mongoose.Types.ObjectId(req.query.id),
+        },
+      },
+      ...userAggregate,
+    ]);
+
+    user = result[0];
+  } else {
+    user = await getUser({
+      _id: mongoose.Types.ObjectId(req.query.id),
+      isBlocked: false,
+    });
+  }
 
   if (!user) {
     return res.json({

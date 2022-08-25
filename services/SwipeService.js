@@ -1,9 +1,9 @@
 import Swipes from "../models/SwipeModel";
+import Users from "../models/UserModel";
 import catchAsync from "../utils/catchAsync";
 import mongoose from "mongoose";
-import { getFilterPrefs } from "./FilterPrefService";
 
-import { swipeAggregate } from "../utils/aggregates";
+import { swipeAggregate, userAggregate } from "../utils/aggregates";
 
 const { Types } = mongoose;
 
@@ -121,30 +121,13 @@ export const delByUser = catchAsync(async (req, res, next) => {
 });
 
 export const getAll = catchAsync(async (req, res, next) => {
-  const { page, limit, user, swipeType } = req.query;
-
-  const filterPrefs = await getFilterPrefs();
-  const _aggregate = [];
+  const { page, limit, user, swipeType, lat, long } = req.query;
 
   const query = {};
   if (user) query.swiperId = Types.ObjectId(user);
   if (swipeType) query.swipeType = swipeType.toUpperCase() === "RIGHT";
 
-  if (query) {
-    _aggregate.push({
-      $match: query,
-    });
-  }
-
-  _aggregate.push(...swipeAggregate);
-
-  var swipeAggregatePromise = Swipes.aggregate(_aggregate);
-  const result = await Swipes.aggregatePaginate(swipeAggregatePromise, {
-    page: page || 1,
-    limit: limit || filterPrefs.filterLimit,
-  });
-
-  let swipes = [...result.docs];
+  var swipes = await Swipes.find(query);
 
   if (swipes.length <= 0) {
     return res.json({
@@ -153,7 +136,49 @@ export const getAll = catchAsync(async (req, res, next) => {
     });
   }
 
-  res.json({
+  if (swipeType) {
+    const _swipes = [];
+    for (let swipe of swipes) {
+      const swipedId = swipe.swipedId;
+
+      const result = await Users.aggregate([
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [parseFloat(long), parseFloat(lat)],
+            },
+            distanceMultiplier: 0.000621371 * 1.61,
+            distanceField: "distance",
+            spherical: true,
+          },
+        },
+        {
+          $match: {
+            _id: swipedId,
+          },
+        },
+        ...userAggregate,
+      ]);
+      const swiped = result[0];
+      _swipes.push(swiped);
+    }
+
+    if (_swipes.length <= 0) {
+      return res.json({
+        success: false,
+        message: "Swipes not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Swipes found",
+      swipes: _swipes,
+    });
+  }
+
+  return res.json({
     success: true,
     message: "Swipes found",
     swipes,
