@@ -14,6 +14,8 @@ import { hash, check } from "../utils/crypt";
 
 import { getEmailBody, sendMail } from "../utils/mailer";
 
+const { Types } = mongoose;
+
 //Login
 export const login = catchAsync(async (req, res, next) => {
   const { username, password } = req.body;
@@ -249,7 +251,7 @@ export const getPaginated = catchAsync(async (req, res, next) => {
   const _aggregate = [];
 
   const query = {};
-  if (genderId) query.genderId = genderId;
+  if (genderId) query.genderId = Types.ObjectId(genderId);
   else if (minAge)
     query.age = maxAge ? { $gte: minAge, $lte: maxAge } : { $gte: minAge };
   else if (maxAge) query.age = { $lte: maxAge };
