@@ -258,27 +258,6 @@ export const getPaginated = catchAsync(async (req, res, next) => {
     query.age = maxAge ? { $gte: minAge, $lte: maxAge } : { $gte: minAge };
   else if (maxAge) query.age = { $lte: maxAge };
 
-  // if (sortByPosts) {
-  //   _aggregate.push(
-  //     {
-  //       $lookup: {
-  //         from: "posts",
-  //         localField: "_id",
-  //         foreignField: "userId",
-  //         pipeline: [
-  //           {
-  //             $project: {
-  //               _id: 0,
-  //               userId: 1,
-  //             }
-  //           }
-  //         ],
-  //         as: "posts",
-  //       },
-  //     },
-  //   );
-  // }
-
   if (lat && long) {
     _aggregate.push(
       {
@@ -293,6 +272,37 @@ export const getPaginated = catchAsync(async (req, res, next) => {
           spherical: true,
         },
       },
+    );
+  }
+
+  if (Boolean(sortByPosts) === true) {
+    _aggregate.push(
+      {
+        $lookup: {
+          from: "posts",
+          localField: "_id",
+          foreignField: "userId",
+          pipeline: [
+            {
+              $project: {
+                _id: 0,
+              }
+            }
+          ],
+          as: "posts",
+        },
+      },
+      {
+        $set: {
+          postCount: { $size: "$posts" },
+        }
+      },
+      {
+        $unset: "posts"
+      },
+      {
+        $sort: { postCount: -1 }
+      }
     );
   }
 
