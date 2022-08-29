@@ -241,6 +241,7 @@ export const getPaginated = catchAsync(async (req, res, next) => {
     limit,
     lat,
     long,
+    name,
     radius,
     gender: genderId,
     min_age: minAge,
@@ -255,6 +256,17 @@ export const getPaginated = catchAsync(async (req, res, next) => {
   else if (minAge)
     query.age = maxAge ? { $gte: minAge, $lte: maxAge } : { $gte: minAge };
   else if (maxAge) query.age = { $lte: maxAge };
+
+  if (name) {
+    _aggregate.push({
+      $match: {
+        $or: [
+          { firstName: { $regex: `${name}`, $options: "i" } },
+          { lastName: { $regex: `${name}`, $options: "i" } }
+        ]
+      }
+    });
+  }
 
   if (lat && long) {
     _aggregate.push(
