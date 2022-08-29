@@ -243,6 +243,7 @@ export const getPaginated = catchAsync(async (req, res, next) => {
     long,
     name,
     radius,
+    sortByPosts,
     gender: genderId,
     min_age: minAge,
     max_age: maxAge,
@@ -257,16 +258,26 @@ export const getPaginated = catchAsync(async (req, res, next) => {
     query.age = maxAge ? { $gte: minAge, $lte: maxAge } : { $gte: minAge };
   else if (maxAge) query.age = { $lte: maxAge };
 
-  if (name) {
-    _aggregate.push({
-      $match: {
-        $or: [
-          { firstName: { $regex: `${name}`, $options: "i" } },
-          { lastName: { $regex: `${name}`, $options: "i" } }
-        ]
-      }
-    });
-  }
+  // if (sortByPosts) {
+  //   _aggregate.push(
+  //     {
+  //       $lookup: {
+  //         from: "posts",
+  //         localField: "_id",
+  //         foreignField: "userId",
+  //         pipeline: [
+  //           {
+  //             $project: {
+  //               _id: 0,
+  //               userId: 1,
+  //             }
+  //           }
+  //         ],
+  //         as: "posts",
+  //       },
+  //     },
+  //   );
+  // }
 
   if (lat && long) {
     _aggregate.push(
@@ -280,19 +291,25 @@ export const getPaginated = catchAsync(async (req, res, next) => {
           distanceMultiplier: 0.000621371 * 1.61,
           distanceField: "distance",
           spherical: true,
-
-          query,
         },
       },
-      {
-        $limit: (page || 1) * (limit || filterPrefs.filterLimit),
-      }
     );
-  } else {
+  }
+
+  if (name) {
     _aggregate.push({
-      $match: query,
+      $match: {
+        $or: [
+          { firstName: { $regex: `${name}`, $options: "i" } },
+          { lastName: { $regex: `${name}`, $options: "i" } }
+        ]
+      }
     });
   }
+
+  _aggregate.push({
+    $match: query,
+  });
 
   _aggregate.push({
     $match: { isBlocked: false },
@@ -544,11 +561,11 @@ async function checkUsername(username) {
 async function getUsers(query = null) {
   let _aggregate = query
     ? [
-        {
-          $match: { ...query },
-        },
-        ...userAggregate,
-      ]
+      {
+        $match: { ...query },
+      },
+      ...userAggregate,
+    ]
     : userAggregate;
 
   const users = await Users.aggregate(_aggregate);
